@@ -1,0 +1,64 @@
+﻿using System.Linq;
+using log4net;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.MSBuild;
+
+namespace Tolltech.TollEnnobler.SolutionFixers
+{
+    public class SolutionProcessor : ISolutionProcessor
+    {
+        private static readonly ILog log = LogManager.GetLogger(typeof(SolutionProcessor));
+
+        public bool Process(string solutionPath, IFixer[] fixers)
+        {
+            var msWorkspace = MSBuildWorkspace.Create();
+
+            var solution = msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false).GetAwaiter().GetResult();
+
+            var f = 0;
+            foreach (var fixer in fixers)
+            {
+                Process(fixer, ref solution, ++f, fixers.Length);
+            }
+
+            return solution.Workspace.TryApplyChanges(solution);
+        }
+
+        private void Process(IFixer fixer, ref Solution solution, int f, int totalF)
+        {
+            var projectIds = solution.Projects.Where(x => x.Name.Contains("Test")).Select(x => x.Id).ToArray();
+            var p = 0;
+            foreach (var projectId in projectIds)
+            {
+                ++p;
+
+
+                var currentProject = solution.GetProject(projectId);
+                log.ToConsole($"Project {currentProject.Name}");
+                var d = 0;
+                var documentIds = currentProject.Documents.Select(x => x.Id).ToArray();
+                foreach (var documentId in documentIds)
+                {
+                    ++d;
+
+
+                    var document = currentProject.GetDocument(documentId);
+                    log.ToConsole($"{f:00}/{totalF} - {p:00}/{projectIds.Length} - {d:0000}/{documentIds.Length} // {currentProject.Name} // {document.Name}");
+                    if (!document.SupportsSyntaxTree)
+                        continue;
+
+                    var documentEditor = DocumentEditor.CreateAsync(document).Result;
+
+                    fixer.Fix(document, documentEditor);
+
+                    var newDocument = documentEditor.GetChangedDocument();
+                    var newProject = newDocument.Project;
+                    currentProject = newProject;
+                }
+
+                solution = currentProject.Solution;
+            }
+        }
+    }
+}

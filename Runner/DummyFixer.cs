@@ -25,11 +25,6 @@ namespace Tolltech.Runner
         public int Order => 43;
         public void Fix(Document document, DocumentEditor documentEditor)
         {
-            if (document.Name.Contains("IntegrationTestBaseWithHttpMock"))
-            {
-                var c = 0;
-            }
-
             foreach (var classDeclaration in document.GetClassMethodDeclarations().Select(x => x.ClassDeclaration).Distinct().OrderByDescending(x => x.GetParentClassDeclarations().Count()))
             {
                 var attrList = SyntaxFactoryExtensions.CreateAttributeList("TestFixture");

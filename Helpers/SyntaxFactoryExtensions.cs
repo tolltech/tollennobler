@@ -19,5 +19,13 @@ namespace Tolltech.TollEnnobler.Helpers
                             ))))
                     ))).NormalizeWhitespace().WithTrailingTrivia(SyntaxFactory.Whitespace("\r\n")).WithLeadingTrivia(SyntaxFactory.Whitespace("    "));
         }
+
+        public static AttributeListSyntax CreateAttributeList(string attributeName)
+        {
+            return SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
+                    SyntaxFactory.Attribute(SyntaxFactory.IdentifierName(attributeName))
+                )).NormalizeWhitespace().WithTrailingTrivia(SyntaxFactory.Whitespace("\r\n"))
+                .WithLeadingTrivia(SyntaxFactory.Whitespace("    "));
+        }
     }
 }

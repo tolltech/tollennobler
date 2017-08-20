@@ -6,14 +6,14 @@ namespace Tolltech.Runner
     {
         static void Main(string[] args)
         {
-            var solutionProcessor = new FixerRunner();
+            var fixerRunner = new FixerRunner();
 
-            solutionProcessor.Run(new Settings
+            fixerRunner.Run(new Settings
             {
                 Log4NetFileName = "log4net.config",
-                ProjectNameFilter = x => x.Contains("Billing"),
+                ProjectNameFilter = x => x.Contains("TestingCore"),
                 RootNamespaceForNinjectConfiguring = "Tolltech",
-                SolutionPath = "C:/_work/MegaWithoutCI.sln"
+                SolutionPath = "C:/_work/Mega.sln"
             });
         }
     }

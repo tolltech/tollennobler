@@ -12,6 +12,10 @@ namespace Tolltech.TollEnnobler.SolutionFixers
         {
             var root = documentEditor.GetChangedDocument().GetSyntaxTreeAsync().Result.GetRoot();
             var usingStatements = root.DescendantNodes().OfType<UsingDirectiveSyntax>().ToArray();
+
+            if (usingStatements.Length == 0)
+                return;
+
             if (usingStatements.All(x => x.Name.ToString() != usingname))
             {
                 var usingFluientStatment = SyntaxFactory.UsingDirective(SyntaxFactory.IdentifierName(usingname)).NormalizeWhitespace().WithTrailingTrivia(SyntaxFactory.Whitespace("\r\n"));

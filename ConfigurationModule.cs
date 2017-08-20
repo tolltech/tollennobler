@@ -25,6 +25,8 @@ namespace Tolltech.TollEnnobler
                 XmlConfigurator.Configure(fileInfo);
             }
 
+            this.Bind<ISettings>().ToConstant(settings);
+
             IoCResolver.Resolve((@interface, implementation) => this.Bind(@interface).To(implementation), new [] { "Tolltech", settings.RootNamespaceForNinjectConfiguring } );
         }
 
@@ -36,7 +38,7 @@ namespace Tolltech.TollEnnobler
 
                 Console.WriteLine($"DI Configuring {string.Join("\r\n", assemblies.Select(x => x.FullName))}");
 
-                var interfaces = assemblies.SelectMany(x => x.GetTypes().Where(y => y.IsInterface)).ToArray();
+                var interfaces = assemblies.SelectMany(x => x.GetTypes().Where(y => y.IsInterface)).Where(x => x.FullName != typeof(ISettings).FullName).ToArray();
                 var types = assemblies.SelectMany(x => x.GetTypes().Where(y => !y.IsInterface && y.IsClass && !y.IsAbstract)).ToArray();
                 foreach (var @interface in interfaces)
                 {

@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Linq;
+using Microsoft.CodeAnalysis;
 
 namespace Tolltech.TollEnnobler.Helpers
 {
@@ -23,8 +24,18 @@ namespace Tolltech.TollEnnobler.Helpers
 
 
             var newAttrsWithoutExcpectedException = attributeListWithExpectedExcetion.Attributes.Remove(expectedExceptionAttribute);
-            var newAttrListWithoutExcpextedExcpetion = attributeListWithExpectedExcetion.WithAttributes(newAttrsWithoutExcpectedException);
-            var newAttrLists = methodDeclaration.AttributeLists.Replace(attributeListWithExpectedExcetion, newAttrListWithoutExcpextedExcpetion);
+
+            SyntaxList<AttributeListSyntax> newAttrLists;
+            if (newAttrsWithoutExcpectedException.Count == 0)
+            {
+                newAttrLists = methodDeclaration.AttributeLists.Remove(attributeListWithExpectedExcetion);
+            }
+            else
+            {
+                var newAttrListWithoutExcpextedExcpetion = attributeListWithExpectedExcetion.WithAttributes(newAttrsWithoutExcpectedException);
+                newAttrLists = methodDeclaration.AttributeLists.Replace(attributeListWithExpectedExcetion, newAttrListWithoutExcpextedExcpetion);
+            }
+            
 
             return methodDeclaration.WithAttributeLists(newAttrLists);
         }

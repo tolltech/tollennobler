@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using System.Collections.Generic;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Tolltech.TollEnnobler.Helpers
 {
@@ -9,6 +10,22 @@ namespace Tolltech.TollEnnobler.Helpers
             var newAttrLists = classDeclaration.AttributeLists;
             newAttrLists = newAttrLists.Add(attributeList);
             return classDeclaration.WithAttributeLists(newAttrLists);
+        }
+
+        public static IEnumerable<ClassDeclarationSyntax> GetParentClassDeclarations(this ClassDeclarationSyntax classDeclaration)
+        {
+            var parent = classDeclaration.Parent;
+            while (parent != null)
+            {
+                var parentClassDeclaration = parent as ClassDeclarationSyntax;
+
+                if (parentClassDeclaration != null)
+                {
+                    yield return parentClassDeclaration;
+                }
+
+                parent = parent.Parent;
+            }
         }
     }
 }

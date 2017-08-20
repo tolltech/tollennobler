@@ -14,8 +14,8 @@ namespace Tolltech.Runner
         {
             foreach (var methodDeclaration in document.GetMethodDeclarations())
             {
-                documentEditor.RemoveAttributeListFromMethod(methodDeclaration ,"OneTimeSetUp");
-            }         
+                documentEditor.RemoveAttributeListFromMethod(methodDeclaration, "OneTimeSetUp");
+            }
         }
     }
 
@@ -25,13 +25,18 @@ namespace Tolltech.Runner
         public int Order => 43;
         public void Fix(Document document, DocumentEditor documentEditor)
         {
-            foreach (var classDeclaration in document.GetClassMethodDeclarations().Select(x => x.ClassDeclaration).Distinct())
+            if (document.Name.Contains("IntegrationTestBaseWithHttpMock"))
+            {
+                var c = 0;
+            }
+
+            foreach (var classDeclaration in document.GetClassMethodDeclarations().Select(x => x.ClassDeclaration).Distinct().OrderByDescending(x => x.GetParentClassDeclarations().Count()))
             {
                 var attrList = SyntaxFactoryExtensions.CreateAttributeList("TestFixture");
 
-                //documentEditor.AddUsingIfDoesntExists("FluentAssertions");
+                documentEditor.AddUsingIfDoesntExists("FluentAssertions");
 
-                //documentEditor.AddAttributeListToClass(classDeclaration, attrList);
+                documentEditor.AddAttributeListToClass(classDeclaration, attrList);
             }
         }
     }

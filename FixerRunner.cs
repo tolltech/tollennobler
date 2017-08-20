@@ -2,31 +2,34 @@
 using System.Linq;
 using log4net;
 using Ninject;
+using Ninject.Modules;
 using Tolltech.TollEnnobler.SolutionFixers;
 
 namespace Tolltech.TollEnnobler
 {
-    class Program
+    public class FixerRunner : IFixerRunner
     {
         private static ILog log = null;
 
-        static void Main(string[] args)
+        public bool Run(ISettings settings, NinjectModule configurationModule = null)
         {
             try
             {
-                var standardKernel = new StandardKernel(new ConfigurationModule("log4net.config"));
+                var standardKernel = new StandardKernel(configurationModule ?? new ConfigurationModule(settings));
 
-                log = LogManager.GetLogger(typeof(Program));
+                log = LogManager.GetLogger(typeof(FixerRunner));
 
                 var fixers = standardKernel.GetAll<IFixer>().OrderBy(x => x.Order).ToArray();
                 var solutionProcessor = standardKernel.Get<ISolutionProcessor>();
 
-                var success = solutionProcessor.Process(args[0], fixers);
+                var success = solutionProcessor.Process(settings.SolutionPath, fixers);
 
                 if (!success)
-                    log.ToError($"Changes cant be applied!");
+                    log?.ToError($"Changes cant be applied!");
                 else
-                    log.ToConsole($"Changes was applied!");
+                    log?.ToConsole($"Changes was applied!");
+
+                return success;
             }
             catch (Exception ex)
             {
@@ -35,6 +38,8 @@ namespace Tolltech.TollEnnobler
 
                 log.Error($"Something goes wrong", ex);
                 Console.WriteLine(ex.Message);
+
+                throw;
             }
         }
     }

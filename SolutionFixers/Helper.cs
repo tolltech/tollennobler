@@ -8,7 +8,7 @@ namespace Tolltech.TollEnnobler.SolutionFixers
 {
     public static class Helper
     {
-        public static void AddUsingIfNeed(this DocumentEditor documentEditor, string usingname)
+        public static void AddUsingIfDoesntExists(this DocumentEditor documentEditor, string usingname)
         {
             var root = documentEditor.GetChangedDocument().GetSyntaxTreeAsync().Result.GetRoot();
             var usingStatements = root.DescendantNodes().OfType<UsingDirectiveSyntax>().ToArray();

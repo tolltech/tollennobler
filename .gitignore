@@ -3,3 +3,5 @@ bin/Debug/*
 obj/*
 packages/*
 *.suo
+Runner/bin/*
+Runner/obj/*

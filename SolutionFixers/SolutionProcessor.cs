@@ -8,7 +8,13 @@ namespace Tolltech.TollEnnobler.SolutionFixers
 {
     public class SolutionProcessor : ISolutionProcessor
     {
+        private readonly ISettings settings;
         private static readonly ILog log = LogManager.GetLogger(typeof(SolutionProcessor));
+
+        public SolutionProcessor(ISettings settings)
+        {
+            this.settings = settings;
+        }
 
         public bool Process(string solutionPath, IFixer[] fixers)
         {
@@ -19,6 +25,7 @@ namespace Tolltech.TollEnnobler.SolutionFixers
             var f = 0;
             foreach (var fixer in fixers)
             {
+                log.ToConsole($"Start fixer {fixer.Name}");
                 Process(fixer, ref solution, ++f, fixers.Length);
             }
 
@@ -27,7 +34,9 @@ namespace Tolltech.TollEnnobler.SolutionFixers
 
         private void Process(IFixer fixer, ref Solution solution, int f, int totalF)
         {
-            var projectIds = solution.Projects.Where(x => x.Name.Contains("Test")).Select(x => x.Id).ToArray();
+            var projectIds = solution.Projects
+                .Where(x => settings.ProjectNameFilter?.Invoke(x.Name) ?? true)
+                .Select(x => x.Id).ToArray();
             var p = 0;
             foreach (var projectId in projectIds)
             {

@@ -10,6 +10,7 @@ TollEnnobler can help you to modifiy your c# projects with Microsoft.Analys
 
 To run the TollEnnobler write a simple peace of code
 
+```cs
 var fixerRunner = new FixerRunner();
 
 fixerRunner.Run(new Settings
@@ -19,6 +20,7 @@ fixerRunner.Run(new Settings
 		RootNamespaceForNinjectConfiguring = "MyNamespace",
 		SolutionPath = "C:/_work/Mega.sln"
 	});
+```
 	
 Then you have to create IFixer implementations.
 Changes to solution will be applied after every IFixer and will be flush after all IFixer-s

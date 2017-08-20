@@ -122,6 +122,7 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="log4net.config" />
+    <None Include="package.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

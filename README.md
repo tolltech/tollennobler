@@ -42,5 +42,6 @@ IFixer example. This fixer removes the "OneTimeSetUp" attribute from all classes
     }
 ```
 
-Install nuget package https://www.nuget.org/packages/Tolltech.Ennobler/
-Or run command in nyget package manager Install-Package Tolltech.Ennobler
+Install nuget package https://www.nuget.org/packages/Tolltech.Ennobler
+
+Or run command in nuget package manager Install-Package Tolltech.Ennobler

@@ -16,7 +16,7 @@ var fixerRunner = new FixerRunner();
 fixerRunner.Run(new Settings
 	{
 		Log4NetFileName = "log4net.config", // path to log4net config file
-		ProjectNameFilter = x => x.Contains("BadProjects"), // filter solution projects for analysis
+		ProjectNameFilter = x => x.Contains("ThisProjectShouldBeFixed"), // filter solution projects for analysis
 		RootNamespaceForNinjectConfiguring = "MyNamespace", // Namespace prefix for autoconfiguring DI by Ninject
 		SolutionPath = "C:/_work/Mega.sln" // Path to solution for analysis
 	});

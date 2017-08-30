@@ -6,6 +6,10 @@ This README would normally document whatever steps are necessary to get your app
 
 TollEnnobler can help you to modifiy your c# projects with Microsoft.Analysis
 
+### Requirements ###
+
+Requires [Microsoft Build Tools 2015](https://www.microsoft.com/en-us/download/details.aspx?id=48159)
+
 ### How do I get set up? ###
 
 To run the TollEnnobler write a simple peace of code

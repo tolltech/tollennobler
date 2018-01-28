@@ -13,7 +13,7 @@ namespace Tolltech.Runner
                 Log4NetFileName = "log4net.config",
                 ProjectNameFilter = x => x.Contains("TestingCore"),
                 RootNamespaceForNinjectConfiguring = "Tolltech",
-                SolutionPath = "C:/_work/Mega.sln"
+                SolutionPath = "D:/billy/MegaWithoutCI.sln"
             });
         }
     }

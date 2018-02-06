@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using log4net;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
@@ -18,7 +19,11 @@ namespace Tolltech.TollEnnobler.SolutionFixers
 
         public bool Process(string solutionPath, IFixer[] fixers)
         {
+            Environment.SetEnvironmentVariable("VSINSTALLDIR", settings.VisualStudioInstallationPath);
+            Environment.SetEnvironmentVariable("VisualStudioVersion", settings.VisualStudioVersion);
             var msWorkspace = MSBuildWorkspace.Create();
+
+            msWorkspace.WorkspaceFailed += (sender, args) => throw new Exception($"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}");
 
             var solution = msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false).GetAwaiter().GetResult();
 

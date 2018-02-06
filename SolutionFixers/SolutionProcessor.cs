@@ -20,6 +20,7 @@ namespace Tolltech.TollEnnobler.SolutionFixers
         {
             var msWorkspace = MSBuildWorkspace.Create();
 
+            msWorkspace.WorkspaceFailed += (sender, args) => throw new Exception($"Fail to load Workspace with error {args.Diagnostic.Message} and kind {args.Diagnostic.Kind}");
             var solution = msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false).GetAwaiter().GetResult();
 
             var f = 0;

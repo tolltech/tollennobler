@@ -8,5 +8,7 @@ namespace Tolltech.TollEnnobler
         string Log4NetFileName { get; }
         Func<string, bool> ProjectNameFilter { get; }
         string SolutionPath { get; }
+        string VisualStudioInstallationPath { get; }
+        string VisualStudioVersion { get; }
     }
 }

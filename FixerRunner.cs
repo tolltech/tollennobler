@@ -39,7 +39,7 @@ namespace Tolltech.TollEnnobler
                 log.Error($"Something goes wrong", ex);
                 Console.WriteLine(ex.Message);
 
-                throw;
+                return false;
             }
         }
     }

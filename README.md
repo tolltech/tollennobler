@@ -22,7 +22,9 @@ fixerRunner.Run(new Settings
 		Log4NetFileName = "log4net.config", // path to log4net config file
 		ProjectNameFilter = x => x.Contains("ThisProjectShouldBeFixed"), // filter solution projects for analysis
 		RootNamespaceForNinjectConfiguring = "MyNamespace", // Namespace prefix for autoconfiguring DI by Ninject
-		SolutionPath = "C:/_work/Mega.sln" // Path to solution for analysis
+		SolutionPath = "C:/_work/Mega.sln", // Path to solution for analysis
+        VisualStudioInstallationPath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional",
+        VisualStudioVersion = @"15.0"
 	});
 ```
 	

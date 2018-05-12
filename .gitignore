@@ -8,3 +8,11 @@ Runner/obj/*
 /.vs/TollEnnobler/v15/sqlite3/storage.ide
 /bin/*
 /*.nupkg
+/.idea/*
+/.vs/*
+/EnnoblerTest/bin/*
+/EnnoblerTest/obj/*
+/Tests/*/bin/*
+/Tests/*/obj/*
+/Tests/.vs/*
+/TollEnnobler.sln.DotSettings.user

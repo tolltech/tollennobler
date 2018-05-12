@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using log4net;
+using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.MSBuild;
@@ -11,6 +12,7 @@ namespace Tolltech.TollEnnobler.SolutionFixers
     {
         private readonly ISettings settings;
         private static readonly ILog log = LogManager.GetLogger(typeof(SolutionProcessor));
+        private static bool MsBuildWasLoaded = false;
 
         public SolutionProcessor(ISettings settings)
         {
@@ -19,8 +21,8 @@ namespace Tolltech.TollEnnobler.SolutionFixers
 
         public bool Process(string solutionPath, IFixer[] fixers)
         {
-            Environment.SetEnvironmentVariable("VSINSTALLDIR", settings.VisualStudioInstallationPath);
-            Environment.SetEnvironmentVariable("VisualStudioVersion", settings.VisualStudioVersion);
+            LoadMsBuildAssemblies();
+
             var msWorkspace = MSBuildWorkspace.Create();
 
             msWorkspace.WorkspaceFailed += (sender, args) => throw new Exception($"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}");
@@ -35,6 +37,22 @@ namespace Tolltech.TollEnnobler.SolutionFixers
             }
 
             return solution.Workspace.TryApplyChanges(solution);
+        }
+
+        private static readonly object locker = new object();
+        private static void LoadMsBuildAssemblies()
+        {
+            if (!MsBuildWasLoaded)
+            {
+                lock (locker)
+                {
+                    if (!MsBuildWasLoaded)
+                    {
+                        MSBuildLocator.RegisterDefaults();
+                        MsBuildWasLoaded = true;
+                    }
+                }
+            }
         }
 
         private void Process(IFixer fixer, ref Solution solution, int f, int totalF)

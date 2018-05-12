@@ -4,7 +4,7 @@ This README would normally document whatever steps are necessary to get your app
 
 ### What is this repository for? ###
 
-TollEnnobler can help you to modifiy your c# projects with Microsoft.Analysis
+TollEnnobler can help you to modify your c# projects with Microsoft.CodeAnalysis
 
 ### Requirements ###
 
@@ -23,8 +23,6 @@ fixerRunner.Run(new Settings
 		ProjectNameFilter = x => x.Contains("ThisProjectShouldBeFixed"), // filter solution projects for analysis
 		RootNamespaceForNinjectConfiguring = "MyNamespace", // Namespace prefix for autoconfiguring DI by Ninject
 		SolutionPath = "C:/_work/Mega.sln", // Path to solution for analysis
-        VisualStudioInstallationPath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional",
-        VisualStudioVersion = @"15.0"
 	});
 ```
 	

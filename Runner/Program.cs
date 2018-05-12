@@ -14,8 +14,6 @@ namespace Tolltech.Runner
                 ProjectNameFilter = x => x.Contains("TestingCore"),
                 RootNamespaceForNinjectConfiguring = "Tolltech",
                 SolutionPath = "D:/billy/MegaWithoutCI.sln",
-                VisualStudioInstallationPath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional",
-                VisualStudioVersion = @"15.0"
             });
         }
     }

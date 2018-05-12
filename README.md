@@ -25,6 +25,16 @@ fixerRunner.Run(new Settings
 		SolutionPath = "C:/_work/Mega.sln", // Path to solution for analysis
 	});
 ```
+
+Or if you don't want to use Ninject DI configuring
+
+```cs
+fixerRunner.Run(new Settings
+            {
+                ProjectNameFilter = x => x == $"ThisProjectShouldBeFixed",
+                SolutionPath = "C:/_work/Mega.sln",
+            }, new IFixer[] { new DummyFixer() });
+```
 	
 Then you have to create IFixer implementations.
 Changes to solution will be applied after every IFixer and will be flush after all IFixer-s

@@ -13,14 +13,18 @@ namespace Tolltech.EnnoblerTest
 
         public class TestFixer : IFixer
         {
+            private readonly List<Document> documents;
             public string Name => "TestFixer";
             public int Order => 1;
 
-            public static List<Document> Documents = new List<Document>();
+            public TestFixer(List<Document> documents)
+            {
+                this.documents = documents;
+            }
 
             public void Fix(Document document, DocumentEditor documentEditor)
             {
-                Documents.Add(document);
+                documents.Add(document);
             }
         }
 
@@ -35,17 +39,17 @@ namespace Tolltech.EnnoblerTest
         [InlineData("Standard")]
         public void TestGetDocuments(string frameworkVersion)
         {
+            var documents = new List<Document>();
             var success = fixerRunner.Run(new Settings
             {
                 Log4NetFileName = null,
                 ProjectNameFilter = x => x == $"Test{frameworkVersion}Project",
                 RootNamespaceForNinjectConfiguring = "Tolltech",
                 SolutionPath = $"../../../../Tests/TestSolution{frameworkVersion}.sln",
-            }, new IFixer[] { new TestFixer() });
+            }, new IFixer[] { new TestFixer(documents) });
 
             Assert.True(success);
 
-            var documents = TestFixer.Documents;
             Assert.NotEmpty(documents);
 
             Assert.Contains(documents, x => x.Name == "ClassForReadonly.cs");

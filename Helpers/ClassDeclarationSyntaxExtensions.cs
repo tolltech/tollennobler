@@ -17,9 +17,7 @@ namespace Tolltech.TollEnnobler.Helpers
             var parent = classDeclaration.Parent;
             while (parent != null)
             {
-                var parentClassDeclaration = parent as ClassDeclarationSyntax;
-
-                if (parentClassDeclaration != null)
+                if (parent is ClassDeclarationSyntax parentClassDeclaration)
                 {
                     yield return parentClassDeclaration;
                 }

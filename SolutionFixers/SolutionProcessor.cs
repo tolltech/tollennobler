@@ -29,11 +29,11 @@ namespace Tolltech.TollEnnobler.SolutionFixers
 
             var solution = msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false).GetAwaiter().GetResult();
 
-            var f = 0;
+            var currentFixerIndex = 0;
             foreach (var fixer in fixers)
             {
                 log.ToConsole($"Start fixer {fixer.Name}");
-                Process(fixer, ref solution, ++f, fixers.Length);
+                Process(fixer, ref solution, ++currentFixerIndex, fixers.Length);
             }
 
             return solution.Workspace.TryApplyChanges(solution);
@@ -55,28 +55,28 @@ namespace Tolltech.TollEnnobler.SolutionFixers
             }
         }
 
-        private void Process(IFixer fixer, ref Solution solution, int f, int totalF)
+        private void Process(IFixer fixer, ref Solution solution, int fixerIndex, int fixersCount)
         {
             var projectIds = solution.Projects
                 .Where(x => settings.ProjectNameFilter?.Invoke(x.Name) ?? true)
                 .Select(x => x.Id).ToArray();
-            var p = 0;
+            var currentProjectIndex = 0;
             foreach (var projectId in projectIds)
             {
-                ++p;
-
+                ++currentProjectIndex;
 
                 var currentProject = solution.GetProject(projectId);
+
                 log.ToConsole($"Project {currentProject.Name}");
-                var d = 0;
+
+                var currentDocumentIndex = 0;
                 var documentIds = currentProject.Documents.Select(x => x.Id).ToArray();
                 foreach (var documentId in documentIds)
                 {
-                    ++d;
-
+                    ++currentDocumentIndex;
 
                     var document = currentProject.GetDocument(documentId);
-                    log.ToConsole($"{f:00}/{totalF} - {p:00}/{projectIds.Length} - {d:0000}/{documentIds.Length} // {currentProject.Name} // {document.Name}");
+                    log.ToConsole($"{fixerIndex:00}/{fixersCount} - {currentProjectIndex:00}/{projectIds.Length} - {currentDocumentIndex:0000}/{documentIds.Length} // {currentProject.Name} // {document.Name}");
                     if (!document.SupportsSyntaxTree)
                         continue;
 

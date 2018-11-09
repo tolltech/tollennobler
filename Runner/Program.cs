@@ -11,7 +11,7 @@ namespace Tolltech.Runner
             fixerRunner.Run(new Settings
             {
                 Log4NetFileName = "log4net.config",
-                ProjectNameFilter = x => x.Contains("TestingCore"),
+                ProjectNameFilter = x => x.Contains("Payments"),
                 RootNamespaceForNinjectConfiguring = "Tolltech",
                 SolutionPath = "D:/billy/MegaWithoutCI.sln",
             });

@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
 
-namespace Tolltech.TollEnnobler.SolutionFixers
+namespace Tolltech.Ennobler.SolutionFixers
 {
     public interface IFixer
     {

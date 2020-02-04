@@ -1,10 +1,11 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
-using Tolltech.TollEnnobler.Helpers;
-using Tolltech.TollEnnobler.SolutionFixers;
+using Tolltech.Ennobler.Helpers;
+using Tolltech.Ennobler.SolutionFixers;
 
-namespace Tolltech.Runner
+namespace Tolltech.EnnoblerRunner
 {
     public class DummyFixer : IFixer
     {
@@ -14,6 +15,7 @@ namespace Tolltech.Runner
         {
             foreach (var methodDeclaration in document.GetMethodDeclarations())
             {
+                Console.WriteLine(document.Name);
                 documentEditor.RemoveAttributeListFromMethod(methodDeclaration, "OneTimeSetUp");
             }
         }

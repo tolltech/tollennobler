@@ -1,6 +1,6 @@
-﻿using Tolltech.TollEnnobler;
+﻿using Tolltech.Ennobler;
 
-namespace Tolltech.Runner
+namespace Tolltech.EnnoblerRunner
 {
     class Program
     {

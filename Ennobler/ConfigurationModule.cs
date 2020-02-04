@@ -4,7 +4,7 @@ using System.Linq;
 using log4net.Config;
 using Ninject.Modules;
 
-namespace Tolltech.TollEnnobler
+namespace Tolltech.Ennobler
 {
     public class ConfigurationModule : NinjectModule
     {

@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 
-namespace Tolltech.TollEnnobler.SolutionFixers
+namespace Tolltech.Ennobler.SolutionFixers
 {
     public static class Helper
     {

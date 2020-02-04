@@ -1,8 +1,8 @@
 ﻿using log4net;
 using Ninject.Modules;
-using Tolltech.TollEnnobler.SolutionFixers;
+using Tolltech.Ennobler.SolutionFixers;
 
-namespace Tolltech.TollEnnobler
+namespace Tolltech.Ennobler
 {
     public interface IFixerRunner
     {

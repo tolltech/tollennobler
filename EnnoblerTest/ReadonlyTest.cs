@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
-using Tolltech.TollEnnobler;
-using Tolltech.TollEnnobler.SolutionFixers;
+using Tolltech.Ennobler;
+using Tolltech.Ennobler.SolutionFixers;
 using Xunit;
 
 namespace Tolltech.EnnoblerTest

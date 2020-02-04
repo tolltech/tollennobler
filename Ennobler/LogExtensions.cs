@@ -1,7 +1,7 @@
 ﻿using System;
 using log4net;
 
-namespace Tolltech.TollEnnobler
+namespace Tolltech.Ennobler
 {
     public static class LogExtensions
     {

@@ -1,4 +1,4 @@
-﻿namespace Tolltech.TollEnnobler.SolutionFixers
+﻿namespace Tolltech.Ennobler.SolutionFixers
 {
     public interface ISolutionProcessor
     {

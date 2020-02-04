@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Editing;
 
-namespace Tolltech.TollEnnobler.Helpers
+namespace Tolltech.Ennobler.Helpers
 {
     public static class DocumentEditorExtensions
     {

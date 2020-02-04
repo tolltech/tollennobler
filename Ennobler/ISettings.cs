@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Tolltech.TollEnnobler
+namespace Tolltech.Ennobler
 {
     public interface ISettings
     {

@@ -2,7 +2,7 @@
 <package>
     <metadata>
         <id>Tolltech.Ennobler</id>
-        <version>2.9.0.2</version>
+        <version>3.5.0.1</version>
         <title>Ennobler</title>
         <authors>Tolltech</authors>
         <copyright>Tolltech</copyright>
@@ -16,14 +16,14 @@
         <dependencies>
             <dependency id="log4net" version="2.0.8" />
             <dependency id="Ninject" version="3.3.4" />
-            <dependency id="Microsoft.CodeAnalysis" version="2.9.0" />
-            <dependency id="Microsoft.CodeAnalysis.Workspaces.MSBuild" version="2.9.0" />
-            <dependency id="Microsoft.Build.Locator" version="1.0.13" />
+            <dependency id="Microsoft.CodeAnalysis" version="3.5.0" />
+            <dependency id="Microsoft.CodeAnalysis.Workspaces.MSBuild" version="3.5.0" />
+            <dependency id="Microsoft.Build.Locator" version="1.2.6" />
         </dependencies>
     </metadata>
     <files>
-        <file src="bin\Release\Tolltech.TollEnnobler.pdb" target="lib\net461" />
-        <file src="bin\Release\Tolltech.TollEnnobler.dll" target="lib\net461" />
-        <file src="bin\Release\Tolltech.TollEnnobler.dll.config" target="lib\net461" />
+        <file src="Ennobler\bin\Debug\net48\Tolltech.Ennobler.pdb" target="lib\net48" />
+        <file src="Ennobler\bin\Debug\net48\Tolltech.Ennobler.dll" target="lib\net48" />
+        <file src="Ennobler\bin\Debug\net48\log4net.config" target="lib\net48" />
     </files>
 </package>

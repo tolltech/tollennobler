@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.MSBuild;
 
-namespace Tolltech.TollEnnobler.SolutionFixers
+namespace Tolltech.Ennobler.SolutionFixers
 {
     public class SolutionProcessor : ISolutionProcessor
     {
@@ -23,20 +23,25 @@ namespace Tolltech.TollEnnobler.SolutionFixers
         {
             LoadMsBuildAssemblies();
 
-            var msWorkspace = MSBuildWorkspace.Create();
-
-            msWorkspace.WorkspaceFailed += (sender, args) => throw new Exception($"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}");
-
-            var solution = msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false).GetAwaiter().GetResult();
-
-            var currentFixerIndex = 0;
-            foreach (var fixer in fixers)
+            using (var msWorkspace = MSBuildWorkspace.Create())
             {
-                log.ToConsole($"Start fixer {fixer.Name}");
-                Process(fixer, ref solution, ++currentFixerIndex, fixers.Length);
-            }
 
-            return solution.Workspace.TryApplyChanges(solution);
+                msWorkspace.WorkspaceFailed += (sender, args) =>
+                    throw new Exception(
+                        $"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}");
+
+                var solution = msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false).GetAwaiter()
+                    .GetResult();
+
+                var currentFixerIndex = 0;
+                foreach (var fixer in fixers)
+                {
+                    log.ToConsole($"Start fixer {fixer.Name}");
+                    Process(fixer, ref solution, ++currentFixerIndex, fixers.Length);
+                }
+
+                return solution.Workspace.TryApplyChanges(solution);
+            }
         }
 
         private static readonly object locker = new object();

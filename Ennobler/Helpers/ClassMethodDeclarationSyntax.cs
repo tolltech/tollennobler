@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Tolltech.TollEnnobler.Helpers
+namespace Tolltech.Ennobler.Helpers
 {
     public class ClassMethodDeclarationSyntax
     {

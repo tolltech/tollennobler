@@ -16,3 +16,7 @@ Runner/obj/*
 /Tests/*/obj/*
 /Tests/.vs/*
 /TollEnnobler.sln.DotSettings.user
+/EnnoblerRunner/obj/*
+/EnnoblerRunner/bin/*
+/Ennobler/bin/*
+/Ennobler/obj/*

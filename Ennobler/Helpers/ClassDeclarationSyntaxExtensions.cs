@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Tolltech.TollEnnobler.Helpers
+namespace Tolltech.Ennobler.Helpers
 {
     public static class ClassDeclarationSyntaxExtensions
     {

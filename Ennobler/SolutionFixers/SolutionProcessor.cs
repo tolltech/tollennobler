@@ -30,29 +30,9 @@ namespace Tolltech.Ennobler.SolutionFixers
         {
             try
             {
-                using var msWorkspace = MSBuildWorkspace.Create(
-                    new Dictionary<string, string>
-                    {
-                        {"BuildingInsideVisualStudio", "false"}
-                    }
-                );
+                log.Info($"Loading solution {solutionPath}...");
 
-                msWorkspace.WorkspaceFailed += (sender, args) =>
-                {
-                    if (args.Diagnostic.Kind == WorkspaceDiagnosticKind.Failure)
-                    {
-                        var message = $"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}";
-
-                        workspaceLog.Error(message);
-                        throw new Exception(message);
-                    }
-
-                    workspaceLog.Warn(args.Diagnostic.Message);
-                };
-                msWorkspace.WorkspaceChanged += (sender, args) =>
-                {
-                    workspaceLog.Info(args.Kind.ToString("G"));
-                };
+                using var msWorkspace = CreateWorkspace();
 
                 var solution = await msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false);
 
@@ -70,6 +50,35 @@ namespace Tolltech.Ennobler.SolutionFixers
                 log.Error(e);
                 throw;
             }
+        }
+
+        private static MSBuildWorkspace CreateWorkspace()
+        {
+            var workspace = MSBuildWorkspace.Create(
+                new Dictionary<string, string>
+                {
+                    ["BuildingInsideVisualStudio"] = "false",
+                    ["BuildInParallel"] = "true",
+                    ["MaxCpuCount"] = (Environment.ProcessorCount / 2 + 1).ToString()
+                }
+            );
+
+            workspace.WorkspaceFailed += (sender, args) =>
+            {
+                if (args.Diagnostic.Kind == WorkspaceDiagnosticKind.Failure)
+                {
+                    var message = $"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}";
+
+                    workspaceLog.Error(message);
+                    throw new Exception(message);
+                }
+
+                workspaceLog.Warn(args.Diagnostic.Message);
+            };
+            workspace.WorkspaceChanged += (sender, args) => { workspaceLog.Info(args.Kind.ToString("G")); };
+            workspace.LoadMetadataForReferencedProjects = true;
+
+            return workspace;
         }
 
         private async Task ProcessAsync(IFixer fixer, Solution solution, int fixerIndex, int fixersCount)

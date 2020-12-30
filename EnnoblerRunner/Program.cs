@@ -10,12 +10,15 @@ namespace Tolltech.EnnoblerRunner
             var fixerRunner = new FixerRunner();
 
             await fixerRunner.RunAsync(new Settings
-            {
-                Log4NetFileName = "log4net.config",
-                ProjectNameFilter = x => x.Contains("Payments"),
-                RootNamespaceForNinjectConfiguring = "Tolltech",
-                SolutionPath = "D:/billy/MegaWithoutCI.sln",
-            });
+                {
+                    Log4NetFileName = "log4net.config",
+                    RootNamespaceForNinjectConfiguring = "Tolltech",
+                    SolutionPath = "C:\\_work\\billy\\Mega.sln",
+                },
+                new[]
+                {
+                    new DummyFixer()
+                });
         }
     }
 }

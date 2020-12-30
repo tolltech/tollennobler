@@ -27,27 +27,43 @@ namespace Tolltech.Ennobler.SolutionFixers
 
         public async Task<bool> ProcessAsync(string solutionPath, IFixer[] fixers)
         {
-            using var msWorkspace = MSBuildWorkspace.Create(
-                new Dictionary<string, string>
-                {
-                    {"BuildingInsideVisualStudio", "false"}
-                }
-            );
-
-            msWorkspace.WorkspaceFailed += (sender, args) =>
-                throw new Exception(
-                    $"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}");
-
-            var solution = await msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false);
-
-            var currentFixerIndex = 0;
-            foreach (var fixer in fixers)
+            try
             {
-                log.ToConsole($"Start fixer {fixer.Name}");
-                await ProcessAsync(fixer, solution, ++currentFixerIndex, fixers.Length);
-            }
+                using var msWorkspace = MSBuildWorkspace.Create(
+                    new Dictionary<string, string>
+                    {
+                        {"BuildingInsideVisualStudio", "false"}
+                    }
+                );
 
-            return solution.Workspace.TryApplyChanges(solution);
+                msWorkspace.WorkspaceFailed += (sender, args) =>
+                {
+                    if (args.Diagnostic.Kind == WorkspaceDiagnosticKind.Failure)
+                    {
+                        throw new Exception(
+                            $"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}");
+                    }
+
+                    log.Warn(args.Diagnostic.Message);
+                };
+
+                var solution = await msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false);
+
+                var currentFixerIndex = 0;
+                foreach (var fixer in fixers)
+                {
+                    log.ToConsole($"Start fixer {fixer.Name}");
+                    await ProcessAsync(fixer, solution, ++currentFixerIndex, fixers.Length);
+                }
+
+                return solution.Workspace.TryApplyChanges(solution);
+            }
+            catch (Exception e)
+            {
+                log.Error(e);
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         private async Task ProcessAsync(IFixer fixer, Solution solution, int fixerIndex, int fixersCount)

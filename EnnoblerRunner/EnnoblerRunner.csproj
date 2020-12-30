@@ -5,6 +5,7 @@
     <TargetFramework>net48</TargetFramework>
     <AssemblyName>Tolltech.EnnoblerRunner</AssemblyName>
     <RootNamespace>Tolltech.EnnoblerRunner</RootNamespace>
+    <LangVersion>8</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

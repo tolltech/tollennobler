@@ -2,18 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
-
     <IsPackable>false</IsPackable>
-
     <AssemblyName>Tolltech.EnnoblerTest</AssemblyName>
-
     <RootNamespace>Tolltech.EnnoblerTest</RootNamespace>
-
-    <ApplicationIcon />
-
-    <OutputType>Library</OutputType>
-
-    <StartupObject />
   </PropertyGroup>
 
   <ItemGroup>

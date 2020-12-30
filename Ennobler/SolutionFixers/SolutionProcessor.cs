@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using log4net;
 using Microsoft.Build.Locator;
@@ -12,7 +13,11 @@ namespace Tolltech.Ennobler.SolutionFixers
     {
         private readonly ISettings settings;
         private static readonly ILog log = LogManager.GetLogger(typeof(SolutionProcessor));
-        private static bool MsBuildWasLoaded = false;
+
+        static SolutionProcessor()
+        {
+            MSBuildLocator.RegisterDefaults();
+        }
 
         public SolutionProcessor(ISettings settings)
         {
@@ -21,43 +26,28 @@ namespace Tolltech.Ennobler.SolutionFixers
 
         public bool Process(string solutionPath, IFixer[] fixers)
         {
-            LoadMsBuildAssemblies();
-
-            using (var msWorkspace = MSBuildWorkspace.Create())
-            {
-
-                msWorkspace.WorkspaceFailed += (sender, args) =>
-                    throw new Exception(
-                        $"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}");
-
-                var solution = msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false).GetAwaiter()
-                    .GetResult();
-
-                var currentFixerIndex = 0;
-                foreach (var fixer in fixers)
+            using var msWorkspace = MSBuildWorkspace.Create(
+                new Dictionary<string, string>
                 {
-                    log.ToConsole($"Start fixer {fixer.Name}");
-                    Process(fixer, ref solution, ++currentFixerIndex, fixers.Length);
+                    {"BuildingInsideVisualStudio", "false"}
                 }
+            );
 
-                return solution.Workspace.TryApplyChanges(solution);
-            }
-        }
+            msWorkspace.WorkspaceFailed += (sender, args) =>
+                throw new Exception(
+                    $"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}");
 
-        private static readonly object locker = new object();
-        private static void LoadMsBuildAssemblies()
-        {
-            if (!MsBuildWasLoaded)
+            var solution = msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false).GetAwaiter()
+                .GetResult();
+
+            var currentFixerIndex = 0;
+            foreach (var fixer in fixers)
             {
-                lock (locker)
-                {
-                    if (!MsBuildWasLoaded)
-                    {
-                        MSBuildLocator.RegisterDefaults();
-                        MsBuildWasLoaded = true;
-                    }
-                }
+                log.ToConsole($"Start fixer {fixer.Name}");
+                Process(fixer, ref solution, ++currentFixerIndex, fixers.Length);
             }
+
+            return solution.Workspace.TryApplyChanges(solution);
         }
 
         private void Process(IFixer fixer, ref Solution solution, int fixerIndex, int fixersCount)
@@ -81,7 +71,8 @@ namespace Tolltech.Ennobler.SolutionFixers
                     ++currentDocumentIndex;
 
                     var document = currentProject.GetDocument(documentId);
-                    log.ToConsole($"{fixerIndex:00}/{fixersCount} - {currentProjectIndex:00}/{projectIds.Length} - {currentDocumentIndex:0000}/{documentIds.Length} // {currentProject.Name} // {document.Name}");
+                    log.ToConsole(
+                        $"{fixerIndex:00}/{fixersCount} - {currentProjectIndex:00}/{projectIds.Length} - {currentDocumentIndex:0000}/{documentIds.Length} // {currentProject.Name} // {document.Name}");
                     if (!document.SupportsSyntaxTree)
                         continue;
 

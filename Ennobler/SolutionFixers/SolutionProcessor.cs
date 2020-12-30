@@ -2,18 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using log4net;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.MSBuild;
+using Vostok.Logging.Abstractions;
 
 namespace Tolltech.Ennobler.SolutionFixers
 {
     public class SolutionProcessor : ISolutionProcessor
     {
         private readonly ISettings settings;
-        private static readonly ILog log = LogManager.GetLogger(typeof(SolutionProcessor));
+        private static readonly ILog log = LogProvider.Get().ForContext(typeof(SolutionProcessor));
+        private static readonly ILog workspaceLog = LogProvider.Get().ForContext(typeof(MSBuildWorkspace));
 
         static SolutionProcessor()
         {
@@ -40,11 +41,17 @@ namespace Tolltech.Ennobler.SolutionFixers
                 {
                     if (args.Diagnostic.Kind == WorkspaceDiagnosticKind.Failure)
                     {
-                        throw new Exception(
-                            $"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}");
+                        var message = $"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}";
+
+                        workspaceLog.Error(message);
+                        throw new Exception(message);
                     }
 
-                    log.Warn(args.Diagnostic.Message);
+                    workspaceLog.Warn(args.Diagnostic.Message);
+                };
+                msWorkspace.WorkspaceChanged += (sender, args) =>
+                {
+                    workspaceLog.Info(args.Kind.ToString("G"));
                 };
 
                 var solution = await msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false);
@@ -52,7 +59,7 @@ namespace Tolltech.Ennobler.SolutionFixers
                 var currentFixerIndex = 0;
                 foreach (var fixer in fixers)
                 {
-                    log.ToConsole($"Start fixer {fixer.Name}");
+                    log.Info($"Start fixer {fixer.Name}");
                     await ProcessAsync(fixer, solution, ++currentFixerIndex, fixers.Length);
                 }
 
@@ -61,7 +68,6 @@ namespace Tolltech.Ennobler.SolutionFixers
             catch (Exception e)
             {
                 log.Error(e);
-                Console.WriteLine(e);
                 throw;
             }
         }
@@ -78,7 +84,7 @@ namespace Tolltech.Ennobler.SolutionFixers
 
                 var currentProject = solution.GetProject(projectId);
 
-                log.ToConsole($"Project {currentProject.Name}");
+                log.Info($"Project {currentProject.Name}");
 
                 var currentDocumentIndex = 0;
                 var documentIds = currentProject.Documents.Select(x => x.Id).ToArray();
@@ -87,7 +93,7 @@ namespace Tolltech.Ennobler.SolutionFixers
                     ++currentDocumentIndex;
 
                     var document = currentProject.GetDocument(documentId);
-                    log.ToConsole(
+                    log.Info(
                         $"{fixerIndex:00}/{fixersCount} - {currentProjectIndex:00}/{projectIds.Length} - {currentDocumentIndex:0000}/{documentIds.Length} // {currentProject.Name} // {document.Name}");
                     if (!document.SupportsSyntaxTree)
                         continue;

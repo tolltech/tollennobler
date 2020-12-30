@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using log4net;
 using Ninject;
 using Ninject.Modules;
@@ -9,63 +10,54 @@ namespace Tolltech.Ennobler
 {
     public class FixerRunner : IFixerRunner
     {
-        private static ILog log = null;
+        private static ILog log;
 
-        public bool Run(ISettings settings, NinjectModule configurationModule = null)
+        public Task<bool> RunAsync(ISettings settings, NinjectModule configurationModule = null)
         {
-            try
-            {
-                var standardKernel = new StandardKernel(configurationModule ?? new ConfigurationModule(settings));
+            var standardKernel = new StandardKernel(configurationModule ?? new ConfigurationModule(settings));
+            var fixers = standardKernel.GetAll<IFixer>().OrderBy(x => x.Order).ToArray();
+            var solutionProcessor = standardKernel.Get<ISolutionProcessor>();
 
-                log = LogManager.GetLogger(typeof(FixerRunner));
-
-                var fixers = standardKernel.GetAll<IFixer>().OrderBy(x => x.Order).ToArray();
-                var solutionProcessor = standardKernel.Get<ISolutionProcessor>();
-
-                var success = solutionProcessor.Process(settings.SolutionPath, fixers);
-
-                if (!success)
-                    log?.ToError($"Changes cant be applied!");
-                else
-                    log?.ToConsole($"Changes was applied!");
-
-                return success;
-            }
-            catch (Exception ex)
-            {
-                if (log == null)
-                    throw;
-
-                log.Error($"Something goes wrong", ex);
-                Console.WriteLine(ex.Message);
-
-                return false;
-            }
+            return RunCoreAsync(settings, fixers, solutionProcessor, LogManager.GetLogger(typeof(FixerRunner)));
         }
 
-        public bool Run(ISettings settings, IFixer[] fixers, ILog configuredLog = null)
+        public Task<bool> RunAsync(ISettings settings, IFixer[] fixers, ILog configuredLog = null)
+        {
+            return RunCoreAsync(settings, fixers, new SolutionProcessor(settings), configuredLog);
+        }
+
+        private static async Task<bool> RunCoreAsync(
+            ISettings settings,
+            IFixer[] fixers,
+            ISolutionProcessor solutionProcessor,
+            ILog configuredLog
+        )
         {
             try
             {
-                var solutionProcessor = new SolutionProcessor(settings);
-
                 log = configuredLog ?? LogManager.GetLogger(typeof(FixerRunner));
 
-                var success = solutionProcessor.Process(settings.SolutionPath, fixers);
+                var success = await solutionProcessor.ProcessAsync(settings.SolutionPath, fixers);
 
                 if (!success)
-                    log?.ToError($"Changes cant be applied!");
+                {
+                    log?.ToError("Unable to apply changes");
+                }
                 else
-                    log?.ToConsole($"Changes was applied!");
+                {
+                    log?.ToConsole($"Changes were applied!");
+                }
 
                 return success;
             }
             catch (Exception ex)
             {
                 if (log == null)
+                {
                     throw;
+                }
 
-                log.Error($"Something goes wrong", ex);
+                log.Error("Something goes wrong", ex);
                 Console.WriteLine(ex.Message);
 
                 return false;

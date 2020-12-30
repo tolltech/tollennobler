@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using log4net;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
@@ -24,7 +25,7 @@ namespace Tolltech.Ennobler.SolutionFixers
             this.settings = settings;
         }
 
-        public bool Process(string solutionPath, IFixer[] fixers)
+        public async Task<bool> ProcessAsync(string solutionPath, IFixer[] fixers)
         {
             using var msWorkspace = MSBuildWorkspace.Create(
                 new Dictionary<string, string>
@@ -37,20 +38,19 @@ namespace Tolltech.Ennobler.SolutionFixers
                 throw new Exception(
                     $"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}");
 
-            var solution = msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false).GetAwaiter()
-                .GetResult();
+            var solution = await msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false);
 
             var currentFixerIndex = 0;
             foreach (var fixer in fixers)
             {
                 log.ToConsole($"Start fixer {fixer.Name}");
-                Process(fixer, ref solution, ++currentFixerIndex, fixers.Length);
+                await ProcessAsync(fixer, solution, ++currentFixerIndex, fixers.Length);
             }
 
             return solution.Workspace.TryApplyChanges(solution);
         }
 
-        private void Process(IFixer fixer, ref Solution solution, int fixerIndex, int fixersCount)
+        private async Task ProcessAsync(IFixer fixer, Solution solution, int fixerIndex, int fixersCount)
         {
             var projectIds = solution.Projects
                 .Where(x => settings.ProjectNameFilter?.Invoke(x.Name) ?? true)
@@ -76,16 +76,16 @@ namespace Tolltech.Ennobler.SolutionFixers
                     if (!document.SupportsSyntaxTree)
                         continue;
 
-                    var documentEditor = DocumentEditor.CreateAsync(document).Result;
+                    var documentEditor = await DocumentEditor.CreateAsync(document);
 
-                    fixer.Fix(document, documentEditor);
+                    await fixer.FixAsync(document, documentEditor);
 
                     var newDocument = documentEditor.GetChangedDocument();
                     var newProject = newDocument.Project;
                     currentProject = newProject;
                 }
 
-                solution = currentProject.Solution;
+                //solution = currentProject.Solution;
             }
         }
     }

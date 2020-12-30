@@ -1,7 +1,9 @@
-﻿namespace Tolltech.Ennobler.SolutionFixers
+﻿using System.Threading.Tasks;
+
+namespace Tolltech.Ennobler.SolutionFixers
 {
     public interface ISolutionProcessor
     {
-        bool Process(string solutionPath, IFixer[] fixers);
+        Task<bool> ProcessAsync(string solutionPath, IFixer[] fixers);
     }
 }

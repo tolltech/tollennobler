@@ -1,14 +1,15 @@
-﻿using Tolltech.Ennobler;
+﻿using System.Threading.Tasks;
+using Tolltech.Ennobler;
 
 namespace Tolltech.EnnoblerRunner
 {
-    class Program
+    public static class Program
     {
-        static void Main(string[] args)
+        public static async Task Main()
         {
             var fixerRunner = new FixerRunner();
 
-            fixerRunner.Run(new Settings
+            await fixerRunner.RunAsync(new Settings
             {
                 Log4NetFileName = "log4net.config",
                 ProjectNameFilter = x => x.Contains("Payments"),

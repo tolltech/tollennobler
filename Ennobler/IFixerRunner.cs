@@ -1,4 +1,5 @@
-﻿using log4net;
+﻿using System.Threading.Tasks;
+using log4net;
 using Ninject.Modules;
 using Tolltech.Ennobler.SolutionFixers;
 
@@ -6,7 +7,7 @@ namespace Tolltech.Ennobler
 {
     public interface IFixerRunner
     {
-        bool Run(ISettings settings, NinjectModule configurationModule = null);
-        bool Run(ISettings settings, IFixer[] fixers, ILog configuredLog = null);
+        Task<bool> RunAsync(ISettings settings, NinjectModule configurationModule = null);
+        Task<bool> RunAsync(ISettings settings, IFixer[] fixers, ILog configuredLog = null);
     }
 }

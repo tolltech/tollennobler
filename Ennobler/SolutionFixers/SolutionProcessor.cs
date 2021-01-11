@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
+using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.MSBuild;
 using Vostok.Logging.Abstractions;
 
@@ -41,7 +42,7 @@ namespace Tolltech.Ennobler.SolutionFixers
                 foreach (var fixer in fixers)
                 {
                     log.Info($"Start fixer {fixer.Name}");
-                    changesApplied = changesApplied && await ProcessAsync(workspace, fixer, solution, ++currentFixerIndex, fixers.Length);
+                    changesApplied = await ProcessAsync(workspace, fixer, solution, ++currentFixerIndex, fixers.Length) && changesApplied;
                 }
 
                 return changesApplied;
@@ -115,7 +116,7 @@ namespace Tolltech.Ennobler.SolutionFixers
 
                     var newDocument = documentEditor.GetChangedDocument();
 
-                    changesApplied = changesApplied && workspace.TryApplyChanges(newDocument.Project.Solution);
+                    changesApplied = workspace.TryApplyChanges(newDocument.Project.Solution) && changesApplied;
                 }
             }
 

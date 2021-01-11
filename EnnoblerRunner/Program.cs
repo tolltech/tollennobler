@@ -30,7 +30,7 @@ namespace Tolltech.EnnoblerRunner
         private static ILog GetLog()
         {
             return new CompositeLog(
-                new ConsoleLog(new ConsoleLogSettings
+                new SynchronousConsoleLog(new ConsoleLogSettings
                 {
                     ColorsEnabled = true
                 }),

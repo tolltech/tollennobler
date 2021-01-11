@@ -102,7 +102,7 @@ namespace Tolltech.Ennobler.SolutionFixers
                     ++currentDocumentIndex;
 
                     var document = currentProject.GetDocument(documentId);
-                    log.Info(
+                    log.Debug(
                         $"{fixerIndex:00}/{fixersCount} - {currentProjectIndex:00}/{projectIds.Length} - {currentDocumentIndex:0000}/{documentIds.Length} // {currentProject.Name} // {document.Name}");
                     if (!document.SupportsSyntaxTree)
                         continue;

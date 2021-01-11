@@ -38,18 +38,18 @@ namespace Tolltech.Ennobler
 
                 if (!success)
                 {
-                    log.Error("Unable to apply changes");
+                    log.Error("Some changes weren't applied");
                 }
                 else
                 {
-                    log.Info($"Changes were applied!");
+                    log.Info("All changes were applied!");
                 }
 
                 return success;
             }
             catch (Exception ex)
             {
-                log.Error(ex, "Something goes wrong");
+                log.Error(ex, "Something went wrong");
 
                 return false;
             }

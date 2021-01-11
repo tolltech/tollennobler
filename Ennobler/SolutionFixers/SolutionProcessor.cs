@@ -32,18 +32,19 @@ namespace Tolltech.Ennobler.SolutionFixers
             {
                 log.Info($"Loading solution {solutionPath}...");
 
-                using var msWorkspace = CreateWorkspace();
+                using var workspace = CreateWorkspace();
 
-                var solution = await msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false);
+                var solution = await workspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false);
 
+                var changesApplied = true;
                 var currentFixerIndex = 0;
                 foreach (var fixer in fixers)
                 {
                     log.Info($"Start fixer {fixer.Name}");
-                    await ProcessAsync(fixer, solution, ++currentFixerIndex, fixers.Length);
+                    changesApplied = changesApplied && await ProcessAsync(workspace, fixer, solution, ++currentFixerIndex, fixers.Length);
                 }
 
-                return solution.Workspace.TryApplyChanges(solution);
+                return changesApplied;
             }
             catch (Exception e)
             {
@@ -76,48 +77,49 @@ namespace Tolltech.Ennobler.SolutionFixers
                 workspaceLog.Warn(args.Diagnostic.Message);
             };
             workspace.WorkspaceChanged += (sender, args) => { workspaceLog.Info(args.Kind.ToString("G")); };
-            workspace.LoadMetadataForReferencedProjects = true;
+            workspace.LoadMetadataForReferencedProjects = false;
 
             return workspace;
         }
 
-        private async Task ProcessAsync(IFixer fixer, Solution solution, int fixerIndex, int fixersCount)
+        private async Task<bool> ProcessAsync(MSBuildWorkspace workspace, IFixer fixer, Solution solution, int fixerIndex, int fixersCount)
         {
-            var projectIds = solution.Projects
+            var projects = solution.Projects
                 .Where(x => settings.ProjectNameFilter?.Invoke(x.Name) ?? true)
-                .Select(x => x.Id).ToArray();
+                .ToList();
+
+            var changesApplied = true;
             var currentProjectIndex = 0;
-            foreach (var projectId in projectIds)
+            foreach (var project in projects)
             {
                 ++currentProjectIndex;
 
-                var currentProject = solution.GetProject(projectId);
+                log.Info($"Project {project!.Name}");
 
-                log.Info($"Project {currentProject.Name}");
+                var documents = project.Documents.ToList();
 
                 var currentDocumentIndex = 0;
-                var documentIds = currentProject.Documents.Select(x => x.Id).ToArray();
-                foreach (var documentId in documentIds)
+                foreach (var document in documents)
                 {
                     ++currentDocumentIndex;
 
-                    var document = currentProject.GetDocument(documentId);
-                    log.Debug(
-                        $"{fixerIndex:00}/{fixersCount} - {currentProjectIndex:00}/{projectIds.Length} - {currentDocumentIndex:0000}/{documentIds.Length} // {currentProject.Name} // {document.Name}");
+                    log.Debug($"{fixerIndex:00}/{fixersCount:00} - {currentProjectIndex:000}/{projects.Count:000} - {currentDocumentIndex:0000}/{documents.Count:0000} // {project.Name} // {document!.FilePath}");
                     if (!document.SupportsSyntaxTree)
+                    {
                         continue;
+                    }
 
                     var documentEditor = await DocumentEditor.CreateAsync(document);
 
                     await fixer.FixAsync(document, documentEditor);
 
                     var newDocument = documentEditor.GetChangedDocument();
-                    var newProject = newDocument.Project;
-                    currentProject = newProject;
-                }
 
-                //solution = currentProject.Solution;
+                    changesApplied = changesApplied && workspace.TryApplyChanges(newDocument.Project.Solution);
+                }
             }
+
+            return changesApplied;
         }
     }
 }

@@ -6,13 +6,16 @@ using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.MSBuild;
+using Tolltech.Ennobler.SolutionFixers;
+using Tolltech.Ennobler.SolutionGraph;
 using Vostok.Logging.Abstractions;
 
-namespace Tolltech.Ennobler.SolutionFixers
+namespace Tolltech.Ennobler
 {
     public class SolutionProcessor : ISolutionProcessor
     {
         private readonly ISettings settings;
+        private readonly ISolutionCompiler solutionCompiler;
         private static readonly ILog log = LogProvider.Get().ForContext(typeof(SolutionProcessor));
         private static readonly ILog workspaceLog = LogProvider.Get().ForContext(typeof(MSBuildWorkspace));
 
@@ -21,9 +24,10 @@ namespace Tolltech.Ennobler.SolutionFixers
             MSBuildLocator.RegisterDefaults();
         }
 
-        public SolutionProcessor(ISettings settings)
+        public SolutionProcessor(ISettings settings, ISolutionCompiler solutionCompiler)
         {
             this.settings = settings;
+            this.solutionCompiler = solutionCompiler;
         }
 
         public async Task<bool> ProcessAsync(string solutionPath, IFixer[] fixers)
@@ -45,6 +49,28 @@ namespace Tolltech.Ennobler.SolutionFixers
                 }
 
                 return changesApplied;
+            }
+            catch (Exception e)
+            {
+                log.Error(e);
+                throw;
+            }
+        }
+
+        public async Task ProcessAsync(string solutionPath, string projectName, string entryPointMethodNames)
+        {
+            try
+            {
+                log.Info($"Loading solution {solutionPath}...");
+
+                using var workspace = CreateWorkspace();
+
+                var solution = await workspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false);
+                var compiledSolution = await solutionCompiler.CompileSolutionAsync(solution).ConfigureAwait(false);
+
+                log.Info($"Compiled solution {solutionPath} with {compiledSolution.CompiledProjects.CompiledProjects.Length}/{solution.ProjectIds.Count} projects");
+
+                log.Info($"Solution {solutionPath} closed.");
             }
             catch (Exception e)
             {

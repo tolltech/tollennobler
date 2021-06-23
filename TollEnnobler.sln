@@ -15,7 +15,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnnoblerTest", "EnnoblerTes
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ennobler", "Ennobler\Ennobler.csproj", "{E3D2F5D4-6F47-4380-A0A3-D9D17E412893}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnnoblerRunner", "EnnoblerRunner\EnnoblerRunner.csproj", "{6947B191-747E-4070-9719-41EFEDE6939D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnnoblerRunner", "EnnoblerRunner\EnnoblerRunner.csproj", "{6947B191-747E-4070-9719-41EFEDE6939D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnnoblerGraph", "EnnoblerGraph\EnnoblerGraph.csproj", "{F275966F-73E6-4AE8-AD33-D198138ADD25}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{D1451E67-FB1B-49DC-97DF-4A14722816A0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,6 +51,14 @@ Global
 		{6947B191-747E-4070-9719-41EFEDE6939D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6947B191-747E-4070-9719-41EFEDE6939D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6947B191-747E-4070-9719-41EFEDE6939D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F275966F-73E6-4AE8-AD33-D198138ADD25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F275966F-73E6-4AE8-AD33-D198138ADD25}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F275966F-73E6-4AE8-AD33-D198138ADD25}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F275966F-73E6-4AE8-AD33-D198138ADD25}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1451E67-FB1B-49DC-97DF-4A14722816A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1451E67-FB1B-49DC-97DF-4A14722816A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1451E67-FB1B-49DC-97DF-4A14722816A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1451E67-FB1B-49DC-97DF-4A14722816A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

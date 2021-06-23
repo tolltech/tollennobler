@@ -5,7 +5,7 @@ using Vostok.Logging.Console;
 using Vostok.Logging.File;
 using Vostok.Logging.File.Configuration;
 
-namespace Tolltech.EnnoblerRunner
+namespace Tolltech.EnnoblerGraph
 {
     public static class Program
     {
@@ -13,17 +13,12 @@ namespace Tolltech.EnnoblerRunner
         {
             LogProvider.Configure(GetLog());
 
-            var fixerRunner = new Runner();
+            var runner = new Runner();
 
-            await fixerRunner.RunFixersAsync(new Settings
+            await runner.RunAnalyzersAsync(new Settings
                 {
-                    Log4NetFileName = "log4net.config",
                     RootNamespaceForNinjectConfiguring = "Tolltech",
-                    SolutionPath = "C:\\_work\\billy\\Mega.sln",
-                },
-                new[]
-                {
-                    new DummyFixer()
+                    SolutionPath = "C:\\work\\billy\\PG.sln",
                 });
         }
 

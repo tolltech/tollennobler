@@ -20,3 +20,7 @@ Runner/obj/*
 /EnnoblerRunner/bin/*
 /Ennobler/bin/*
 /Ennobler/obj/*
+/Common/bin/*
+/Common/obj/*
+/EnnoblerGraph/bin/*
+/EnnoblerGraph/obj/*

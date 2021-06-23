@@ -4,15 +4,16 @@ using System.Threading.Tasks;
 using Ninject;
 using Ninject.Modules;
 using Tolltech.Ennobler.SolutionFixers;
+using Tolltech.Ennobler.SolutionGraph;
 using Vostok.Logging.Abstractions;
 
 namespace Tolltech.Ennobler
 {
-    public class FixerRunner : IFixerRunner
+    public class Runner : IRunner
     {
-        private static readonly ILog log = LogProvider.Get().ForContext<FixerRunner>();
+        private static readonly ILog log = LogProvider.Get().ForContext<Runner>();
 
-        public Task<bool> RunAsync(ISettings settings, NinjectModule configurationModule = null)
+        public Task<bool> RunFixersAsync(ISettings settings, NinjectModule configurationModule = null)
         {
             var standardKernel = new StandardKernel(configurationModule ?? new ConfigurationModule(settings));
             var fixers = standardKernel.GetAll<IFixer>().OrderBy(x => x.Order).ToArray();
@@ -21,9 +22,17 @@ namespace Tolltech.Ennobler
             return RunCoreAsync(settings, fixers, solutionProcessor);
         }
 
-        public Task<bool> RunAsync(ISettings settings, IFixer[] fixers)
+        public Task<bool> RunFixersAsync(ISettings settings, IFixer[] fixers)
         {
-            return RunCoreAsync(settings, fixers, new SolutionProcessor(settings));
+            return RunCoreAsync(settings, fixers, new SolutionProcessor(settings, new SolutionCompiler()));
+        }
+
+        public Task RunAnalyzersAsync(ISettings settings, NinjectModule configurationModule = null)
+        {
+            var standardKernel = new StandardKernel(configurationModule ?? new ConfigurationModule(settings));
+            var solutionProcessor = standardKernel.Get<ISolutionProcessor>();
+
+            return solutionProcessor.ProcessAsync(settings.SolutionPath, "", "");
         }
 
         private static async Task<bool> RunCoreAsync(

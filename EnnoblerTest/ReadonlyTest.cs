@@ -10,7 +10,7 @@ namespace Tolltech.EnnoblerTest
 {
     public class ReadOnlyTest
     {
-        private FixerRunner fixerRunner;
+        private Runner _runner;
 
         public class TestFixer : IFixer
         {
@@ -33,7 +33,7 @@ namespace Tolltech.EnnoblerTest
 
         public ReadOnlyTest()
         {
-            fixerRunner = new FixerRunner();
+            _runner = new Runner();
         }
 
         [Theory]
@@ -43,7 +43,7 @@ namespace Tolltech.EnnoblerTest
         public async Task TestGetDocuments(string frameworkVersion)
         {
             var documents = new List<Document>();
-            var success = await fixerRunner.RunAsync(new Settings
+            var success = await _runner.RunFixersAsync(new Settings
             {
                 Log4NetFileName = null,
                 ProjectNameFilter = x => x == $"Test{frameworkVersion}Project",

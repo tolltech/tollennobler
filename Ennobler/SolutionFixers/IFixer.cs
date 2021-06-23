@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
 
 namespace Tolltech.Ennobler.SolutionFixers
@@ -7,6 +8,6 @@ namespace Tolltech.Ennobler.SolutionFixers
     {
         string Name { get; }
         int Order { get; }
-        void Fix(Document document, DocumentEditor documentEditor);
+        Task FixAsync(Document document, DocumentEditor documentEditor);
     }
 }

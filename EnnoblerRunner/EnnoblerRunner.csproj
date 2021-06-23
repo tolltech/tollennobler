@@ -5,6 +5,7 @@
     <TargetFramework>net48</TargetFramework>
     <AssemblyName>Tolltech.EnnoblerRunner</AssemblyName>
     <RootNamespace>Tolltech.EnnoblerRunner</RootNamespace>
+    <LangVersion>8</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,12 +13,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="log4net.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="run.bat">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Vostok.Logging.Console" Version="1.0.5" />
+    <PackageReference Include="Vostok.Logging.File" Version="1.0.12" />
   </ItemGroup>
 
 </Project>

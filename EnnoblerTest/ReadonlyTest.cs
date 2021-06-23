@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
 using Tolltech.Ennobler;
@@ -22,9 +23,11 @@ namespace Tolltech.EnnoblerTest
                 this.documents = documents;
             }
 
-            public void Fix(Document document, DocumentEditor documentEditor)
+            public Task FixAsync(Document document, DocumentEditor documentEditor)
             {
                 documents.Add(document);
+
+                return Task.CompletedTask;
             }
         }
 
@@ -37,10 +40,10 @@ namespace Tolltech.EnnoblerTest
         [InlineData("Core")]
         [InlineData("Framework")]
         [InlineData("Standard")]
-        public void TestGetDocuments(string frameworkVersion)
+        public async Task TestGetDocuments(string frameworkVersion)
         {
             var documents = new List<Document>();
-            var success = fixerRunner.Run(new Settings
+            var success = await fixerRunner.RunAsync(new Settings
             {
                 Log4NetFileName = null,
                 ProjectNameFilter = x => x == $"Test{frameworkVersion}Project",

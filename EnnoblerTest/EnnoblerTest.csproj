@@ -2,18 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
-
     <IsPackable>false</IsPackable>
-
     <AssemblyName>Tolltech.EnnoblerTest</AssemblyName>
-
     <RootNamespace>Tolltech.EnnoblerTest</RootNamespace>
-
-    <ApplicationIcon />
-
-    <OutputType>Library</OutputType>
-
-    <StartupObject />
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +12,7 @@
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
+    <PackageReference Include="Vostok.Logging.Console" Version="1.0.5" />
   </ItemGroup>
 
   <ItemGroup>

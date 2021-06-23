@@ -1,101 +1,125 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using log4net;
+using System.Threading.Tasks;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.MSBuild;
+using Vostok.Logging.Abstractions;
 
 namespace Tolltech.Ennobler.SolutionFixers
 {
     public class SolutionProcessor : ISolutionProcessor
     {
         private readonly ISettings settings;
-        private static readonly ILog log = LogManager.GetLogger(typeof(SolutionProcessor));
-        private static bool MsBuildWasLoaded = false;
+        private static readonly ILog log = LogProvider.Get().ForContext(typeof(SolutionProcessor));
+        private static readonly ILog workspaceLog = LogProvider.Get().ForContext(typeof(MSBuildWorkspace));
+
+        static SolutionProcessor()
+        {
+            MSBuildLocator.RegisterDefaults();
+        }
 
         public SolutionProcessor(ISettings settings)
         {
             this.settings = settings;
         }
 
-        public bool Process(string solutionPath, IFixer[] fixers)
+        public async Task<bool> ProcessAsync(string solutionPath, IFixer[] fixers)
         {
-            LoadMsBuildAssemblies();
-
-            using (var msWorkspace = MSBuildWorkspace.Create())
+            try
             {
+                log.Info($"Loading solution {solutionPath}...");
 
-                msWorkspace.WorkspaceFailed += (sender, args) =>
-                    throw new Exception(
-                        $"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}");
+                using var workspace = CreateWorkspace();
 
-                var solution = msWorkspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false).GetAwaiter()
-                    .GetResult();
+                var solution = await workspace.OpenSolutionAsync(solutionPath).ConfigureAwait(false);
 
+                var changesApplied = true;
                 var currentFixerIndex = 0;
                 foreach (var fixer in fixers)
                 {
-                    log.ToConsole($"Start fixer {fixer.Name}");
-                    Process(fixer, ref solution, ++currentFixerIndex, fixers.Length);
+                    log.Info($"Start fixer {fixer.Name}");
+                    changesApplied = await ProcessAsync(workspace, fixer, solution, ++currentFixerIndex, fixers.Length) && changesApplied;
                 }
 
-                return solution.Workspace.TryApplyChanges(solution);
+                return changesApplied;
             }
-        }
-
-        private static readonly object locker = new object();
-        private static void LoadMsBuildAssemblies()
-        {
-            if (!MsBuildWasLoaded)
+            catch (Exception e)
             {
-                lock (locker)
-                {
-                    if (!MsBuildWasLoaded)
-                    {
-                        MSBuildLocator.RegisterDefaults();
-                        MsBuildWasLoaded = true;
-                    }
-                }
+                log.Error(e);
+                throw;
             }
         }
 
-        private void Process(IFixer fixer, ref Solution solution, int fixerIndex, int fixersCount)
+        private static MSBuildWorkspace CreateWorkspace()
         {
-            var projectIds = solution.Projects
+            var workspace = MSBuildWorkspace.Create(
+                new Dictionary<string, string>
+                {
+                    ["BuildingInsideVisualStudio"] = "false",
+                    ["BuildInParallel"] = "true",
+                    ["MaxCpuCount"] = (Environment.ProcessorCount / 2 + 1).ToString()
+                }
+            );
+
+            workspace.WorkspaceFailed += (sender, args) =>
+            {
+                if (args.Diagnostic.Kind == WorkspaceDiagnosticKind.Failure)
+                {
+                    var message = $"Fail to load Workspace with {args.Diagnostic.Kind} and message {args.Diagnostic.Message}";
+
+                    workspaceLog.Error(message);
+                    throw new Exception(message);
+                }
+
+                workspaceLog.Warn(args.Diagnostic.Message);
+            };
+            workspace.WorkspaceChanged += (sender, args) => { workspaceLog.Info(args.Kind.ToString("G")); };
+            workspace.LoadMetadataForReferencedProjects = false;
+
+            return workspace;
+        }
+
+        private async Task<bool> ProcessAsync(MSBuildWorkspace workspace, IFixer fixer, Solution solution, int fixerIndex, int fixersCount)
+        {
+            var projects = solution.Projects
                 .Where(x => settings.ProjectNameFilter?.Invoke(x.Name) ?? true)
-                .Select(x => x.Id).ToArray();
+                .ToList();
+
+            var changesApplied = true;
             var currentProjectIndex = 0;
-            foreach (var projectId in projectIds)
+            foreach (var project in projects)
             {
                 ++currentProjectIndex;
 
-                var currentProject = solution.GetProject(projectId);
+                log.Info($"Project {project!.Name}");
 
-                log.ToConsole($"Project {currentProject.Name}");
+                var documents = project.Documents.ToList();
 
                 var currentDocumentIndex = 0;
-                var documentIds = currentProject.Documents.Select(x => x.Id).ToArray();
-                foreach (var documentId in documentIds)
+                foreach (var document in documents)
                 {
                     ++currentDocumentIndex;
 
-                    var document = currentProject.GetDocument(documentId);
-                    log.ToConsole($"{fixerIndex:00}/{fixersCount} - {currentProjectIndex:00}/{projectIds.Length} - {currentDocumentIndex:0000}/{documentIds.Length} // {currentProject.Name} // {document.Name}");
+                    log.Debug($"{fixerIndex:00}/{fixersCount:00} - {currentProjectIndex:000}/{projects.Count:000} - {currentDocumentIndex:0000}/{documents.Count:0000} // {project.Name} // {document!.FilePath}");
                     if (!document.SupportsSyntaxTree)
+                    {
                         continue;
+                    }
 
-                    var documentEditor = DocumentEditor.CreateAsync(document).Result;
+                    var documentEditor = await DocumentEditor.CreateAsync(document);
 
-                    fixer.Fix(document, documentEditor);
+                    await fixer.FixAsync(document, documentEditor);
 
                     var newDocument = documentEditor.GetChangedDocument();
-                    var newProject = newDocument.Project;
-                    currentProject = newProject;
-                }
 
-                solution = currentProject.Solution;
+                    changesApplied = workspace.TryApplyChanges(newDocument.Project.Solution) && changesApplied;
+                }
             }
+
+            return changesApplied;
         }
     }
 }

@@ -57,7 +57,7 @@ namespace Tolltech.Ennobler
             }
         }
 
-        public async Task ProcessAsync(string solutionPath, string projectName, string entryPointMethodNames)
+        public async Task ProcessAsync(string solutionPath, IAnalyzer[] analyzers)
         {
             try
             {
@@ -69,6 +69,11 @@ namespace Tolltech.Ennobler
                 var compiledSolution = await solutionCompiler.CompileSolutionAsync(solution).ConfigureAwait(false);
 
                 log.Info($"Compiled solution {solutionPath} with {compiledSolution.CompiledProjects.CompiledProjects.Length}/{solution.ProjectIds.Count} projects");
+
+                foreach (var analyzer in analyzers)
+                {
+                    await analyzer.AnalyzeAsync(compiledSolution).ConfigureAwait(false);
+                }
 
                 log.Info($"Solution {solutionPath} closed.");
             }

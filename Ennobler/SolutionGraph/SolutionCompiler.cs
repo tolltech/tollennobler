@@ -24,8 +24,6 @@ namespace Tolltech.Ennobler.SolutionGraph
 
             foreach (var project in solutionProjects)
             {
-                log.ToConsole($"Start compiling project {project.Name}");
-
                 if (project.SupportsCompilation)
                 {
 
@@ -34,14 +32,13 @@ namespace Tolltech.Ennobler.SolutionGraph
                     compiledProjectsList.Add(new CompiledProject(project, compilation));
                 }
 
-                log.ToConsole($"Finish compiling project {project.Name}");
                 log.ToConsole($"Compiling projects {++iterator}/{total}");
             }
 
             log.ToConsole($"Finish compiling projects for {solution.FilePath}");
 
-            var compiledProjectModel = new CompiledProjectModel(compiledProjectsList.ToArray());
-            await compiledProjectModel.FillDocumentsAsync().ConfigureAwait(false);
+            var compiledProjectModel = new CompiledProjectsModel(compiledProjectsList.ToArray());
+            await compiledProjectModel.FillCompilationAsync().ConfigureAwait(false);
 
             return new CompiledSolution
             {

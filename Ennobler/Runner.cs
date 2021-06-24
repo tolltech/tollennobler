@@ -32,7 +32,12 @@ namespace Tolltech.Ennobler
             var standardKernel = new StandardKernel(configurationModule ?? new ConfigurationModule(settings));
             var solutionProcessor = standardKernel.Get<ISolutionProcessor>();
 
-            return solutionProcessor.ProcessAsync(settings.SolutionPath, "", "");
+            return solutionProcessor.ProcessAsync(settings.SolutionPath, standardKernel.GetAll<IAnalyzer>().ToArray());
+        }
+
+        public Task RunAnalyzersAsync(ISettings settings, IAnalyzer[] analyzers)
+        {
+            return new SolutionProcessor(settings, new SolutionCompiler()).ProcessAsync(settings.SolutionPath, analyzers);
         }
 
         private static async Task<bool> RunCoreAsync(

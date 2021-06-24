@@ -17,5 +17,10 @@ namespace Tolltech.Common
 
             return val;
         }
+
+        public static TValue SafeGet<TKey, TValue>(this IDictionary<TKey,TValue> dict, TKey key, TValue defaultValue = default)
+        {
+            return dict.TryGetValue(key, out var val) ? val : defaultValue;
+        }
     }
 }

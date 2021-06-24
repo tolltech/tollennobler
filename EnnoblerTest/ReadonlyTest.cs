@@ -4,6 +4,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
 using Tolltech.Ennobler;
 using Tolltech.Ennobler.SolutionFixers;
+using Tolltech.Ennobler.SolutionGraph;
+using Tolltech.Ennobler.SolutionGraph.Models;
 using Xunit;
 
 namespace Tolltech.EnnoblerTest
@@ -31,6 +33,23 @@ namespace Tolltech.EnnoblerTest
             }
         }
 
+        public class TestAnalyzer : IAnalyzer
+        {
+            private CompiledSolution compiledSolution;
+
+            public Task AnalyzeAsync(CompiledSolution compiledSolution)
+            {
+                this.compiledSolution = compiledSolution;
+                return Task.CompletedTask;
+            }
+
+            public CompiledMethod[] GetMethods(string namespaceName, string className, string methodName)
+            {
+                return compiledSolution.CompiledProjects.GetMethods(namespaceName, className, methodName);
+            }
+        }
+
+
         public ReadOnlyTest()
         {
             _runner = new Runner();
@@ -49,7 +68,7 @@ namespace Tolltech.EnnoblerTest
                 ProjectNameFilter = x => x == $"Test{frameworkVersion}Project",
                 RootNamespaceForNinjectConfiguring = "Tolltech",
                 SolutionPath = $"../../../../Tests/TestSolution{frameworkVersion}.sln",
-            }, new IFixer[] { new TestFixer(documents) });
+            }, new IFixer[] { new TestFixer(documents) }).ConfigureAwait(false);
 
             Assert.True(success);
 
@@ -57,5 +76,28 @@ namespace Tolltech.EnnoblerTest
 
             Assert.Contains(documents, x => x.Name == "ClassForReadonly.cs");
         }
+
+        [Theory]
+        [InlineData("Core", "TestCoreProject", "TestCoreClass", "TestMethod", true)]
+        [InlineData("Core", "TestCoreProject", "TestCoreClass", "TestMethod2", false)]
+        [InlineData("Framework", "TestFrameworkProject", "TestClass", "TestMethod", true)]
+        [InlineData("Framework", "TestFrameworkProject", "TestClass", "TestMethod2", false)]
+        [InlineData("Standard", "TestStandardProject", "StandardClass", "TestMethod", true)]
+        [InlineData("Standard", "TestStandardProject", "StandardClass", "TestMethod2", false)]
+        public async Task TestAnalyze(string frameworkVersion, string namespaceName, string className, string methodName, bool expected)
+        {
+            var testAnalyzer = new TestAnalyzer();
+            await _runner.RunAnalyzersAsync(new Settings
+            {
+                Log4NetFileName = null,
+                ProjectNameFilter = x => x == $"Test{frameworkVersion}Project",
+                RootNamespaceForNinjectConfiguring = "Tolltech",
+                SolutionPath = $"../../../../Tests/TestSolution{frameworkVersion}.sln",
+            }, new IAnalyzer[] {testAnalyzer}).ConfigureAwait(false);
+
+            var methods = testAnalyzer.GetMethods(namespaceName, className, methodName);
+            Assert.Equal(methods.Length > 0, expected);
+        }
+
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Tolltech.Ennobler;
+using Tolltech.Ennobler.Models;
 using Vostok.Logging.Abstractions;
 using Vostok.Logging.Console;
 using Vostok.Logging.File;
@@ -15,10 +16,25 @@ namespace Tolltech.EnnoblerGraph
 
             var runner = new Runner();
 
+            var callStackBuilder = new CallStackBuilder();
             await runner.RunAnalyzersAsync(new Settings
+            {
+                RootNamespaceForNinjectConfiguring = "Tolltech",
+                SolutionPath = "C:\\work\\billy\\PG.sln",
+            }, new[] {callStackBuilder});
+
+            var nodes = callStackBuilder.GetFullestCallStack(
+                new FullMethodName
                 {
-                    RootNamespaceForNinjectConfiguring = "Tolltech",
-                    SolutionPath = "C:\\work\\billy\\PG.sln",
+                    ClassName = "PaymentTransactionService",
+                    MethodName = "SendChequesByTransactionsAsync",
+                    NamespaceName = "SKBKontur.Billy.Billing.PaymentsGateway.Layers.ApplicationLayer"
+                },
+                new FullMethodName
+                {
+                    ClassName = "PaymentTransactionService",
+                    MethodName = "SendChequesByContextAsync",
+                    NamespaceName = "SKBKontur.Billy.Billing.PaymentsGateway.Layers.ApplicationLayer"
                 });
         }
 

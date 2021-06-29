@@ -1,10 +1,11 @@
 ﻿using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Tolltech.Ennobler.SolutionGraph.Models;
 
 namespace Tolltech.Ennobler.SolutionGraph
 {
     public interface IAnalyzer
     {
-        Task AnalyzeAsync(CompiledSolution compiledSolution);
+        [NotNull] Task AnalyzeAsync([NotNull] CompiledSolution compiledSolution);
     }
 }

@@ -7,6 +7,7 @@ using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Tolltech.Common;
+using Tolltech.Ennobler.Models;
 using Tolltech.Ennobler.SolutionGraph.Helpers;
 using Vostok.Logging.Abstractions;
 
@@ -98,7 +99,7 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
                         }).ToArray();
 
                         var className = classSymbol.Name;
-                        var namespaceName = classSymbol.ContainingNamespace.Name;
+                        var namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
                         var newMethods = fields.Concat(properties).Concat(methods).Select(x => new CompiledMethod
                         {
                             Namespace = namespaceName,
@@ -164,13 +165,13 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
 
         [ItemNotNull]
         [NotNull]
-        public CompiledMethod[] GetMethods(string namespaceName, string className, string methodName)
+        public CompiledMethod[] GetMethods(FullMethodName methodName)
         {
             return namespaces
-                       .SafeGet(namespaceName)?
-                       .Classes.SafeGet(className)?
+                       .SafeGet(methodName.NamespaceName)?
+                       .Classes.SafeGet(methodName.ClassName)?
                        .Methods
-                       .Where(x => x.ShortName == methodName)
+                       .Where(x => x.ShortName == methodName.MethodName)
                        .ToArray()
                    ?? Array.Empty<CompiledMethod>();
         }

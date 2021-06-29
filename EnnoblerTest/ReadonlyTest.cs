@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
 using Tolltech.Ennobler;
+using Tolltech.Ennobler.Models;
 using Tolltech.Ennobler.SolutionFixers;
 using Tolltech.Ennobler.SolutionGraph;
 using Tolltech.Ennobler.SolutionGraph.Models;
@@ -45,7 +46,12 @@ namespace Tolltech.EnnoblerTest
 
             public CompiledMethod[] GetMethods(string namespaceName, string className, string methodName)
             {
-                return compiledSolution.CompiledProjects.GetMethods(namespaceName, className, methodName);
+                return compiledSolution.CompiledProjects.GetMethods(new FullMethodName
+                {
+                    MethodName = methodName,
+                    ClassName = className,
+                    NamespaceName = namespaceName
+                });
             }
         }
 

@@ -1,6 +1,8 @@
 ﻿using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Tolltech.Common;
 using Tolltech.Ennobler;
 using Tolltech.Ennobler.Models;
 using Vostok.Logging.Abstractions;
@@ -39,8 +41,15 @@ namespace Tolltech.EnnoblerGraph
                     NamespaceName = "SKBKontur.Billy.Billing.PaymentsGateway.Layers.ApplicationLayer"
                 });
 
-            var flatten = nodes.SelectMany(x => x.Flatten()).ToArray();
-            var nodesJson = JsonConvert.SerializeObject(nodes);
+            var sb = new StringBuilder();
+            foreach (var node in nodes.Single().Dfs())
+            {
+                sb.AppendLine(new string('\t', node.Level) + $"{node.Node.Node.ClassName}" +
+                              $".{node.Node.Node.ShortName}" +
+                              $".{string.Join(",", node.Node.Node.ParameterInfos.Select(x=>x.Type))}");
+            }
+
+            var ss = sb.ToString();
         }
 
         private static ILog GetLog()

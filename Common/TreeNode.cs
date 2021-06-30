@@ -10,9 +10,9 @@ namespace Tolltech.Common
             Children = new TreeNode<TNode>[0];
         }
 
-        public TreeNode<TNode>[] Children { get; set; }
-
         public TNode Node { get; set; }
+
+        public TreeNode<TNode>[] Children { get; set; }
 
         public TreeNode<TNode>[] Flatten()
         {

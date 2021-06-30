@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Vostok.Logging.Console" Version="1.0.5" />
     <PackageReference Include="Vostok.Logging.File" Version="1.0.12" />
   </ItemGroup>

@@ -1,31 +1,54 @@
 ﻿using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Newtonsoft.Json;
 using Tolltech.Ennobler.Models;
 
 namespace Tolltech.Ennobler.SolutionGraph.Models
 {
     public class CompiledMethod
     {
+        public string DebugName => $"{ClassName}.{ShortName}.{string.Join(",", ParameterInfos.Select(x => x.Name))}";
+
+        [JsonIgnore]
         public string Name => $"{Namespace}.{ClassName}.{ShortName}";
 
-        public FullMethodName FullMethodName => new FullMethodName
-            {MethodName = ShortName, ClassName = ClassName, NamespaceName = Namespace};
-        public string ClassName { get; set; }
-        public string ShortName { get; set; }
-        public Compilation Compilation { get; set; }
-        public ParameterSyntax[] Parameters { get; set; }
-        public BlockSyntax MethodBody { get; set; }
-        public SemanticModel SemanticModel { get; set; }
-        public SyntaxTree DocumentSyntaxTree { get; set; }
-        public string ProjectName { get; set; }
-        public bool IsProperty { get; set; }
+        [JsonIgnore]
+        public FullMethodName FullMethodName => new FullMethodName {MethodName = ShortName, ClassName = ClassName, NamespaceName = Namespace};
+
+        [JsonIgnore]
         public string Namespace { get; set; }
-        public TypeSyntax ReturnType { get; set; }
-        public string SourceCode { get; set; }
+
+        [JsonIgnore]
+        public string ClassName { get; set; }
+        [JsonIgnore]
+        public string ShortName { get; set; }
+        [JsonIgnore]
+        public MethodParameterInfo[] ParameterInfos => GetMethodParametersInfos();
+
+        [JsonIgnore]
+        public bool IsProperty { get; set; }
+        [JsonIgnore]
         public int StartLineNumber { get; set; }
+        [JsonIgnore]
         public int EndLineNumber { get; set; }
 
+        [JsonIgnore]
+        public TypeSyntax ReturnType { get; set; }
+        [JsonIgnore]
+        public string SourceCode { get; set; }
+        [JsonIgnore]
+        public Compilation Compilation { get; set; }
+        [JsonIgnore]
+        public ParameterSyntax[] Parameters { get; set; }
+        [JsonIgnore]
+        public BlockSyntax MethodBody { get; set; }
+        [JsonIgnore]
+        public SemanticModel SemanticModel { get; set; }
+        [JsonIgnore]
+        public SyntaxTree DocumentSyntaxTree { get; set; }
+
+        [JsonIgnore]
         public string Hash => $"{Name}_{SerializeParametersInfo(GetMethodParametersInfos())}";
 
         private static string SerializeParametersInfo(MethodParameterInfo[] parameters)

@@ -95,7 +95,9 @@ namespace Tolltech.EnnoblerGraph
         [CanBeNull]
         private CompiledMethod FoundMethodsBySyntaxNode(SyntaxNode syntaxNode, CompiledMethod compiledMethod)
         {
-            var methodSearchParameters = TryGetDefault(syntaxNode, compiledMethod);
+            var methodSearchParameters = TryGetPrivateMethod(syntaxNode, compiledMethod) 
+                                         ?? TryGetProperty(syntaxNode, compiledMethod)
+                                         ?? TryGetDefault(syntaxNode, compiledMethod);
 
             if (methodSearchParameters == null)
             {
@@ -169,6 +171,151 @@ namespace Tolltech.EnnoblerGraph
             }
 
             return suitableMethod;
+        }
+
+        private MethodSearchParameters TryGetProperty(SyntaxNode syntaxNode, CompiledMethod compiledMethod)
+        {
+            return null;
+            #region property is not interesting
+        //it is true if it's method invocation, not for property
+            //if (syntaxNode.Parent is InvocationExpressionSyntax)
+            //{
+            //    return null;
+            //}
+
+            //PropertyCallInfo propertyCallInfo;
+            //if (syntaxNode is MemberAccessExpressionSyntax)
+            //{
+            //    var memberAccessExpressiontSyntax = (MemberAccessExpressionSyntax)syntaxNode;
+            //    var propertyName = memberAccessExpressiontSyntax.Name.Identifier.ValueText;
+
+
+            //    propertyCallInfo = new PropertyCallInfo
+            //    {
+            //        PropertyName = propertyName,
+            //        EntityExpression = memberAccessExpressiontSyntax.Expression,
+            //        IsSetAccessor = (syntaxNode.Parent as AssignmentExpressionSyntax)?.Left == memberAccessExpressiontSyntax
+            //    };
+            //}
+            //else if (syntaxNode is ConditionalAccessExpressionSyntax)
+            //{
+            //    var conditionalAccessExpressionSyntax = (ConditionalAccessExpressionSyntax)syntaxNode;
+            //    var propertyName = (conditionalAccessExpressionSyntax.WhenNotNull as MemberBindingExpressionSyntax)
+            //        ?.Name.Identifier.ValueText;
+
+            //    propertyCallInfo = new PropertyCallInfo
+            //    {
+            //        PropertyName = propertyName,
+            //        EntityExpression = conditionalAccessExpressionSyntax.Expression,
+            //        IsSetAccessor = false
+            //    };
+            //}
+            //else if (syntaxNode is AssignmentExpressionSyntax)
+            //{
+            //    var assignmentExpressionSyntax = (AssignmentExpressionSyntax)syntaxNode;
+
+            //    var propertyName = (assignmentExpressionSyntax.Left as IdentifierNameSyntax)?.Identifier.ValueText;
+            //    if (propertyName == null)
+            //    {
+            //        return null;
+            //    }
+
+            //    var objectCreationExpressionSyntax =
+            //    ((assignmentExpressionSyntax.Parent as InitializerExpressionSyntax)?
+            //        .Parent as ObjectCreationExpressionSyntax);
+
+            //    if (objectCreationExpressionSyntax == null)
+            //    {
+            //        return null;
+            //    }
+
+            //    propertyCallInfo = new PropertyCallInfo
+            //    {
+            //        PropertyName = propertyName,
+            //        EntityExpression = objectCreationExpressionSyntax,
+            //        IsSetAccessor = true
+            //    };
+
+            //}
+            //else
+            //{
+            //    return null;
+            //}
+
+            //var entityExpression = propertyCallInfo.EntityExpression;
+
+            ////for checking if namespace
+            //var symbolInfo = extractedMethod.GetTypeSymbolInfo(entityExpression);
+            //if (symbolInfo?.IsNamespace ?? false)
+            //{
+            //    return null;
+            //}
+
+            //var entityType = extractedMethod.GetExpressionSymbol(entityExpression);
+
+            //if (entityType == null)
+            //{
+            //    log.Error($"Cant find entity for property {propertyCallInfo.PropertyName} {propertyCallInfo.EntityExpression} {extractedMethod.ClassName}");
+            //    return null;
+            //}
+
+            //if (!entityType.IsInteresting(rootNamespaceName))
+            //{
+            //    return null;
+            //}
+
+            //var entityTypes = entityType.TypeKind == TypeKind.Interface || entityType.IsAbstract
+            //    ? SymbolFinder.FindImplementationsAsync(entityType, solution).Result.Cast<ITypeSymbol>().ToArray()
+            //    : new[] { entityType };
+
+            //return new MethodSearchInfo
+            //{
+            //    MethodName = propertyCallInfo.PropertyName,
+            //    ClassSymbols = entityTypes,
+            //    IsNetwork = false,
+            //    Parameters = new ITypeSymbol[0],
+            //    Async = false,
+            //    IsSetAccessor = propertyCallInfo.IsSetAccessor
+            //};
+
+            //private class PropertyCallInfo
+            //{
+            //    public string PropertyName { get; set; }
+            //    public ExpressionSyntax EntityExpression { get; set; }
+            //    public bool IsSetAccessor { get; set; }
+            //}
+            #endregion
+        }
+
+        private MethodSearchParameters TryGetPrivateMethod(SyntaxNode syntaxNode, CompiledMethod compiledMethod)
+        {
+            var invocationExpressionSyntax = syntaxNode as InvocationExpressionSyntax;
+            if (invocationExpressionSyntax == null)
+            {
+                return null;
+            }
+
+            //it is true only for privateMethods
+            if (invocationExpressionSyntax.Expression is IdentifierNameSyntax identifierNameSyntax)
+            {
+                var classDeclarationSyntax = invocationExpressionSyntax.FindParent<ClassDeclarationSyntax>();
+                if (classDeclarationSyntax != null)
+                {
+                    if (compiledMethod.SemanticModel.GetDeclaredSymbol(classDeclarationSyntax) is INamedTypeSymbol classSymbol)
+                    {
+                        return new MethodSearchParameters
+                        {
+                            MethodName = identifierNameSyntax.Identifier.ValueText,
+                            Classes = new[] { classSymbol },
+                            Parameters = invocationExpressionSyntax.ArgumentList.Arguments
+                                .Select(x => compiledMethod.SemanticModel.GetTypeInfo(x.Expression).Type)
+                                .ToArray()
+                        };
+                    }
+                }
+            }
+
+            return null;
         }
 
         private MethodSearchParameters TryGetDefault(SyntaxNode syntaxNode, CompiledMethod compiledMethod)

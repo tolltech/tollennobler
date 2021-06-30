@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 using Tolltech.Ennobler.Models;
 
@@ -6,6 +7,8 @@ namespace Tolltech.Ennobler.Helpers
 {
     public static class SymbolExtensions
     {
+        [ItemNotNull]
+        [NotNull]
         public static ITypeSymbol[] GetBaseClasses(this ITypeSymbol symbol)
         {
             var result = new List<ITypeSymbol>();

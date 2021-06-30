@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Tolltech.Common;
 using Tolltech.Ennobler;
 using Tolltech.Ennobler.Models;
@@ -46,7 +45,7 @@ namespace Tolltech.EnnoblerGraph
             {
                 sb.AppendLine(new string('\t', node.Level) + $"{node.Node.Node.ClassName}" +
                               $".{node.Node.Node.ShortName}" +
-                              $".{string.Join(",", node.Node.Node.ParameterInfos.Select(x=>x.Type))}");
+                              $".{string.Join(",", node.Node.Node.ParameterInfos.Select(x => x.Type))}");
             }
 
             var ss = sb.ToString();

@@ -1,18 +1,19 @@
-﻿using System;
+﻿using JetBrains.Annotations;
 using Microsoft.CodeAnalysis;
 
 namespace Tolltech.Ennobler.SolutionGraph.Models
 {
     public class MethodSearchParameters
     {
-        public MethodSearchParameters()
+        public MethodSearchParameters([NotNull] string methodName, [ItemNotNull] [NotNull] ITypeSymbol[] classes, [ItemNotNull] [NotNull] ITypeSymbol[] parameters)
         {
-            Parameters = Array.Empty<ITypeSymbol>();
-            Classes = Array.Empty<ITypeSymbol>();
+            MethodName = methodName;
+            Parameters = parameters;
+            Classes = classes;
         }
 
-        public string MethodName { get; set; }
-        public ITypeSymbol[] Parameters { get; set; }
-        public ITypeSymbol[] Classes { get; set; }
+        [NotNull] public string MethodName { get; }
+        [ItemNotNull] [NotNull] public ITypeSymbol[] Parameters { get; }
+        [ItemNotNull] [NotNull] public ITypeSymbol[] Classes { get; }
     }
 }

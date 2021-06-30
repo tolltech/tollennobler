@@ -115,10 +115,10 @@ namespace Tolltech.EnnoblerGraph
             var suitableMethodsByName = new List<CompiledMethod>(classSymbolWithBaseTypes.Length);
             foreach (var classSymbol in classSymbolWithBaseTypes)
             {
-                if (classSymbol == null)
-                {
-                    continue;
-                }
+                //if (classSymbol == null)
+                //{
+                //    continue;
+                //}
 
                 if (classSymbol.ContainingNamespace.Name.StartsWith("System."))
                 {
@@ -134,8 +134,8 @@ namespace Tolltech.EnnoblerGraph
             var filePaths = string.Join(",", classSymbolWithBaseTypes.Select(x => $"{x.ContainingNamespace.ToDisplayString()}.{x.Name}"));
             if (suitableMethodsByName.Count == 0)
             {
-                log.Error($"Find 0 candidates {methodName} with parameters {string.Join(",", parameters.Select(x => x?.ToString() ?? "null"))}");
-                $"Find 0 candidates,{methodName},{filePaths},{string.Join(";", parameters.Select(x => x?.ToString() ?? "null"))}".ToStructuredLogFile();
+                log.Error($"Find 0 candidates {methodName} with parameters {string.Join(",", parameters.Select(x => x.ToString()))}");
+                $"Find 0 candidates,{methodName},{filePaths},{string.Join(";", parameters.Select(x => x.ToString()))}".ToStructuredLogFile();
                return null;
             }
 
@@ -303,14 +303,10 @@ namespace Tolltech.EnnoblerGraph
                 {
                     if (compiledMethod.SemanticModel.GetDeclaredSymbol(classDeclarationSyntax) is INamedTypeSymbol classSymbol)
                     {
-                        return new MethodSearchParameters
-                        {
-                            MethodName = identifierNameSyntax.Identifier.ValueText,
-                            Classes = new[] { classSymbol },
-                            Parameters = invocationExpressionSyntax.ArgumentList.Arguments
+                        return new MethodSearchParameters(identifierNameSyntax.Identifier.ValueText,
+                            new[] {classSymbol}, invocationExpressionSyntax.ArgumentList.Arguments
                                 .Select(x => compiledMethod.SemanticModel.GetTypeInfo(x.Expression).Type)
-                                .ToArray()
-                        };
+                                .ToArray());
                     }
                 }
             }
@@ -357,12 +353,7 @@ namespace Tolltech.EnnoblerGraph
                 .Select(x => compiledMethod.SemanticModel.GetTypeInfo(x.Expression).Type)
                 .ToArray();
 
-            return new MethodSearchParameters
-            {
-                MethodName = methodName,
-                Parameters = parameters,
-                Classes = fieldImplementations
-            };
+            return new MethodSearchParameters(methodName, fieldImplementations, parameters);
         }
     }
 }

@@ -5,7 +5,7 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
 {
     public class MethodSearchParameters
     {
-        public MethodSearchParameters([NotNull] string methodName, [ItemNotNull] [NotNull] ITypeSymbol[] classes, [ItemNotNull] [NotNull] ITypeSymbol[] parameters)
+        public MethodSearchParameters([NotNull] string methodName, [ItemNotNull] [NotNull] ITypeSymbol[] classes, [ItemCanBeNull] [NotNull] ITypeSymbol[] parameters)
         {
             MethodName = methodName;
             Parameters = parameters;
@@ -13,7 +13,7 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
         }
 
         [NotNull] public string MethodName { get; }
-        [ItemNotNull] [NotNull] public ITypeSymbol[] Parameters { get; }
+        [ItemCanBeNull] [NotNull] public ITypeSymbol[] Parameters { get; }
         [ItemNotNull] [NotNull] public ITypeSymbol[] Classes { get; }
     }
 }

@@ -17,6 +17,9 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
     {
         private readonly ConcurrentDictionary<string, CompiledNamespaceModel> namespaces =
             new ConcurrentDictionary<string, CompiledNamespaceModel>();
+
+        private ILookup<string, string> classesWithMethods;
+
         private static readonly ILog log = LogProvider.Get().ForContext(typeof(CompiledProjectsModel));
 
         private bool compilationFilled = false;
@@ -33,11 +36,17 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
 
             var totalDocumentsCount = CompiledProjects.Sum(x => x.Project.Documents.Count());
             var documentIterator = 0;
+            var currentPercent = 0;
             foreach (var compiledProject in CompiledProjects)
             {
                 foreach (var document in compiledProject.Project.Documents)
                 {
-                    log.ToConsole($"Filling {++documentIterator}/{totalDocumentsCount} documents");
+                    var newPercent = ++documentIterator * 10 / totalDocumentsCount;
+                    if (newPercent > currentPercent)
+                    {
+                        currentPercent = newPercent;
+                        log.ToConsole($"Filling {currentPercent * 10}% documents");
+                    }
 
                     var documentRoot = await document.GetSyntaxRootAsync().ConfigureAwait(false);
                     var documentSyntaxTree = await document.GetSyntaxTreeAsync().ConfigureAwait(false);
@@ -57,15 +66,20 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
 
                         if (classSymbol == null)
                         {
-                            throw new Exception($"Can't create symbol for classDeclaration {classDeclarationSyntax.Identifier.Text}");
+                            throw new Exception(
+                                $"Can't create symbol for classDeclaration {classDeclarationSyntax.Identifier.Text}");
                         }
 
-                        var fieldDeclarationSyntaxes = classDeclarationSyntax.DescendantNodes().OfType<FieldDeclarationSyntax>().ToArray();
-                        var strangeFieldDeclarations = fieldDeclarationSyntaxes.Where(x => !x.Declaration.Variables.Any() || x.Declaration.Variables.Count > 1).ToArray();
+                        var fieldDeclarationSyntaxes = classDeclarationSyntax.DescendantNodes()
+                            .OfType<FieldDeclarationSyntax>().ToArray();
+                        var strangeFieldDeclarations = fieldDeclarationSyntaxes
+                            .Where(x => !x.Declaration.Variables.Any() || x.Declaration.Variables.Count > 1).ToArray();
                         if (strangeFieldDeclarations.Any())
                         {
-                            log.Error($"Strange FieldDeclarations without variables {string.Join(", ", strangeFieldDeclarations.Select(x => x))}; {document.FilePath} {classDeclarationSyntax.Identifier.ValueText}");
+                            log.Error(
+                                $"Strange FieldDeclarations without variables {string.Join(", ", strangeFieldDeclarations.Select(x => x))}; {document.FilePath} {classDeclarationSyntax.Identifier.ValueText}");
                         }
+
                         var fields = fieldDeclarationSyntaxes.Except(strangeFieldDeclarations).Select(x => new
                         {
                             Name = x.Declaration.Variables.First().Identifier.ValueText,
@@ -76,18 +90,21 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
                             Span = x.Span
                         }).ToArray();
 
-                        var propertyDeclarationSyntaxes = classDeclarationSyntax.DescendantNodes().OfType<PropertyDeclarationSyntax>().ToArray();
+                        var propertyDeclarationSyntaxes = classDeclarationSyntax.DescendantNodes()
+                            .OfType<PropertyDeclarationSyntax>().ToArray();
                         var properties = propertyDeclarationSyntaxes.Select(x => new
                         {
                             Name = semanticModel.GetDeclaredSymbol(x)?.Name,
                             Parameters = new ParameterSyntax[0],
-                            MethodBody = x.AccessorList?.Accessors.FirstOrDefault(y => y.Keyword.ValueText == "get")?.Body,
+                            MethodBody = x.AccessorList?.Accessors.FirstOrDefault(y => y.Keyword.ValueText == "get")
+                                ?.Body,
                             MemberType = MemberType.Property,
                             ReturnType = x.Type,
                             Span = x.Span
                         }).ToArray();
 
-                        var methodDeclarationSyntaxes = classDeclarationSyntax.DescendantNodes().OfType<MethodDeclarationSyntax>().ToArray();
+                        var methodDeclarationSyntaxes = classDeclarationSyntax.DescendantNodes()
+                            .OfType<MethodDeclarationSyntax>().ToArray();
                         var methods = methodDeclarationSyntaxes.Select(x => new
                         {
                             Name = semanticModel.GetDeclaredSymbol(x)?.Name,
@@ -146,11 +163,16 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
                                         Methods = newMethods
                                     };
                                 }
+
                                 return namespaceModel;
                             });
                     }
                 }
             }
+
+            classesWithMethods = namespaces.SelectMany(x => x.Value.Classes.Values)
+                .SelectMany(cl => cl.Methods.Select(m => (ClassName: cl.Name, MethodName: m.ShortName)))
+                .ToLookup(x => x.ClassName, x => x.MethodName);
 
             log.ToConsole($"Symbol tree is filled.");
             compilationFilled = true;
@@ -167,11 +189,19 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
         [NotNull]
         public CompiledMethod[] GetMethods(FullMethodName methodName)
         {
+            if (!compilationFilled)
+            {
+                throw new Exception($"You should call {nameof(FillCompilationAsync)} before use {nameof(GetMethods)} method");
+            }
+
+            var parameterTypesStr = string.Join(",", methodName.ParameterTypes ?? Array.Empty<string>());
             return namespaces
                        .SafeGet(methodName.NamespaceName)?
                        .Classes.SafeGet(methodName.ClassName)?
                        .Methods
                        .Where(x => x.ShortName == methodName.MethodName)
+                       .Where(x => string.IsNullOrWhiteSpace(parameterTypesStr) ||
+                                   parameterTypesStr == string.Join(",", x.ParameterInfos.Select(p => p.Type)))
                        .ToArray()
                    ?? Array.Empty<CompiledMethod>();
         }
@@ -183,6 +213,11 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
         public Compilation GetCompilationByProject(Project project)
         {
             return compilationsByProject.GetOrAdd(project, x => x.GetCompilationAsync().Result);
+        }
+
+        public bool HasMethod(string className, string methodName)
+        {
+            return classesWithMethods[className].Contains(methodName);
         }
     }
 }

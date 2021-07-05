@@ -120,7 +120,12 @@ namespace Tolltech.EnnoblerGraph
                 //    continue;
                 //}
 
-                if (classSymbol.ContainingNamespace.Name.StartsWith("System."))
+                if (!compiledSolution.CompiledProjects.HasMethod(classSymbol.Name, methodSearchParameters.MethodName))
+                {
+                    continue;
+                }
+
+                if (classSymbol.ContainingNamespace?.Name.StartsWith("System.") ?? false)
                 {
                     continue;
                 }
@@ -131,11 +136,11 @@ namespace Tolltech.EnnoblerGraph
 
             var methodName = methodSearchParameters.MethodName;
             var parameters = methodSearchParameters.Parameters;
-            var filePaths = string.Join(",", classSymbolWithBaseTypes.Select(x => $"{x.ContainingNamespace.ToDisplayString()}.{x.Name}"));
+            var filePaths = string.Join(",", classSymbolWithBaseTypes.Select(x => $"{x.ContainingNamespace?.ToDisplayString()}.{x.Name}"));
             if (suitableMethodsByName.Count == 0)
             {
-                log.Error($"Find 0 candidates {methodName} with parameters {string.Join(",", parameters.Select(x => x.ToString()))}");
-                $"Find 0 candidates,{methodName},{filePaths},{string.Join(";", parameters.Select(x => x.ToString()))}".ToStructuredLogFile();
+                log.Error($"Find 0 candidates {methodName} with parameters {string.Join(",", parameters.Select(x => x?.ToString()))}");
+                $"Find 0 candidates,{methodName},{filePaths},{string.Join(";", parameters.Select(x => x?.ToString()))}".ToStructuredLogFile();
                return null;
             }
 
@@ -332,7 +337,7 @@ namespace Tolltech.EnnoblerGraph
 
             var fieldType = compiledMethod.SemanticModel.GetTypeInfo(memberAccessExpressionSyntax.Expression).Type;
 
-            if (fieldType?.ContainingNamespace.ToString().StartsWith("System") ?? false)
+            if (fieldType?.ContainingNamespace?.ToString().StartsWith("System") ?? false)
             {
                 return null;
             }

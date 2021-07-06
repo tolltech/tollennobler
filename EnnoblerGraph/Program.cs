@@ -9,6 +9,7 @@ using Tolltech.Ennobler;
 using Tolltech.Ennobler.Helpers;
 using Tolltech.Ennobler.Models;
 using Tolltech.Ennobler.SolutionGraph.Helpers;
+using Tolltech.Ennobler.SolutionGraph.Models;
 using Tolltech.EnnoblerGraph.Metrics;
 using Vostok.Logging.Abstractions;
 using Vostok.Logging.Console;
@@ -93,38 +94,61 @@ namespace Tolltech.EnnoblerGraph
             foreach (var tree in nodes)
             foreach (var node in tree.Dfs())
             {
-                var methodMetrics = codeMetricsByName[(node.Node.Node.Namespace, node.Node.Node.ClassName, node.Node.Node.ShortName)].ToArray();
-                var suitableMethodMetrics = methodMetrics;
+                var metricsStr = GetMetricsStr(codeMetricsByName, node.Node, node.Level, log);
 
-                var sourceParameters = node.Node.Node.ParameterInfos.Select(x => x?.Type).ToArray();
-                if (suitableMethodMetrics.Length > 1)
-                {
-                    suitableMethodMetrics = suitableMethodMetrics.Where(x => SyntaxHelpers.ParametersAreSuitableSimple(sourceParameters, x.Name.ParameterTypes)).ToArray();
-                }
-
-                if (suitableMethodMetrics.Length > 1)
-                {
-                    log.Error($"Find several metrics for {node.Node.Node.Name} with parameters {string.Join(",", sourceParameters)}");
-                    $"Find several metrics,{node.Node.Node.Name},,{string.Join(",", sourceParameters)}".ToStructuredLogFile();
-                }
-
-                if (suitableMethodMetrics.Length == 0)
-                {
-                    log.Error($"Find 0 metrics for {node.Node.Node.Name} with parameters {string.Join(",", sourceParameters)}");
-                    $"Find 0 metrics,{node.Node.Node.Name},,{string.Join(",", sourceParameters)}".ToStructuredLogFile();
-                }
-
-                var methodMetric = suitableMethodMetrics.FirstOrDefault();
-
-                sb.AppendLine(new string('\t', node.Level) + $"{node.Node.Node.ClassName}" +
-                              $".{node.Node.Node.ShortName}" +
-                              $".{string.Join(",", node.Node.Node.ParameterInfos.Select(x => x.Type))}" +
-                              $" - MI {methodMetric?.MaintainabilityIndex};Cyclo {methodMetric?.CyclomaticComplexity};Lines {methodMetric?.LinesOfExecutableCode};Coupling {methodMetric?.ClassCoupling}");
+                sb.AppendLine(metricsStr);
             }
 
 
             log.Info(sb.ToString());
-            var ss = sb.ToString();
+
+            sb.Clear();
+            foreach (var tree in nodes)
+            {
+                var level = 0;
+                foreach (var node in tree.RightWays())
+                {
+                    var metricsStr = GetMetricsStr(codeMetricsByName, node, level++, log);
+                    sb.AppendLine(metricsStr);
+                }
+            }
+
+            log.Info(sb.ToString());
+        }
+
+        private static string GetMetricsStr(ILookup<(string NamespaceName, string ClassName, string MethodName), MethodMetrics> codeMetricsByName, TreeNode<CompiledMethod> node, int level, ILog log)
+        {
+            var methodMetrics =
+                codeMetricsByName[(node.Node.Namespace, node.Node.ClassName, node.Node.ShortName)].ToArray();
+            var suitableMethodMetrics = methodMetrics;
+
+            var sourceParameters = node.Node.ParameterInfos.Select(x => x?.Type).ToArray();
+            if (suitableMethodMetrics.Length > 1)
+            {
+                suitableMethodMetrics = suitableMethodMetrics
+                    .Where(x => SyntaxHelpers.ParametersAreSuitableSimple(sourceParameters, x.Name.ParameterTypes)).ToArray();
+            }
+
+            if (suitableMethodMetrics.Length > 1)
+            {
+                log.Error(
+                    $"Find several metrics for {node.Node.Name} with parameters {string.Join(",", sourceParameters)}");
+                $"Find several metrics,{node.Node.Name},,{string.Join(",", sourceParameters)}".ToStructuredLogFile();
+            }
+
+            if (suitableMethodMetrics.Length == 0)
+            {
+                log.Error($"Find 0 metrics for {node.Node.Name} with parameters {string.Join(",", sourceParameters)}");
+                $"Find 0 metrics,{node.Node.Name},,{string.Join(",", sourceParameters)}".ToStructuredLogFile();
+            }
+
+            var methodMetric = suitableMethodMetrics.FirstOrDefault();
+
+            var metricsStr = new string('\t', level) + $"{node.Node.ClassName}" +
+                             $".{node.Node.ShortName}" +
+                             $".{string.Join(",", node.Node.ParameterInfos.Select(x => x.Type))}" +
+                             $" - MI {methodMetric?.MaintainabilityIndex};Cyclo {methodMetric?.CyclomaticComplexity};Lines {methodMetric?.LinesOfExecutableCode};Coupling {methodMetric?.ClassCoupling}";
+            return metricsStr;
         }
 
         private static string[] GetParametersFromCodeMetricsReport(string methodName)

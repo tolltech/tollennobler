@@ -1,17 +1,18 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Editing;
+using NUnit.Framework;
 using Tolltech.Ennobler;
 using Tolltech.Ennobler.Models;
 using Tolltech.Ennobler.SolutionFixers;
 using Tolltech.Ennobler.SolutionGraph;
 using Tolltech.Ennobler.SolutionGraph.Models;
-using Xunit;
 
 namespace Tolltech.EnnoblerTest
 {
-    public class ReadOnlyTest
+    public class ReadOnlyTest : TestBase
     {
         private Runner _runner;
 
@@ -56,15 +57,17 @@ namespace Tolltech.EnnoblerTest
         }
 
 
-        public ReadOnlyTest()
+        public override void Setup()
         {
+            base.Setup();
+
             _runner = new Runner();
         }
 
-        [Theory]
-        [InlineData("Core")]
-        [InlineData("Framework")]
-        [InlineData("Standard")]
+        [Test]
+        [TestCase("Core")]
+        [TestCase("Framework")]
+        [TestCase("Standard")]
         public async Task TestGetDocuments(string frameworkVersion)
         {
             var documents = new List<Document>();
@@ -74,23 +77,24 @@ namespace Tolltech.EnnoblerTest
                 ProjectNameFilter = x => x == $"Test{frameworkVersion}Project",
                 RootNamespaceForNinjectConfiguring = "Tolltech",
                 SolutionPath = $"../../../../Tests/TestSolution{frameworkVersion}.sln",
-            }, new IFixer[] { new TestFixer(documents) }).ConfigureAwait(false);
+            }, new IFixer[] {new TestFixer(documents)}).ConfigureAwait(false);
 
             Assert.True(success);
 
-            Assert.NotEmpty(documents);
+            Assert.IsNotEmpty(documents);
 
-            Assert.Contains(documents, x => x.Name == "ClassForReadonly.cs");
+            Assert.IsTrue(documents.Any(x => x.Name == "ClassForReadonly.cs"));
         }
 
         [Theory]
-        [InlineData("Core", "TestCoreProject", "TestCoreClass", "TestMethod", true)]
-        [InlineData("Core", "TestCoreProject", "TestCoreClass", "TestMethod2", false)]
-        [InlineData("Framework", "TestFrameworkProject", "TestClass", "TestMethod", true)]
-        [InlineData("Framework", "TestFrameworkProject", "TestClass", "TestMethod2", false)]
-        [InlineData("Standard", "TestStandardProject", "StandardClass", "TestMethod", true)]
-        [InlineData("Standard", "TestStandardProject", "StandardClass", "TestMethod2", false)]
-        public async Task TestAnalyze(string frameworkVersion, string namespaceName, string className, string methodName, bool expected)
+        [TestCase("Core", "TestCoreProject", "TestCoreClass", "TestMethod", true)]
+        [TestCase("Core", "TestCoreProject", "TestCoreClass", "TestMethod2", false)]
+        [TestCase("Framework", "TestFrameworkProject", "TestClass", "TestMethod", true)]
+        [TestCase("Framework", "TestFrameworkProject", "TestClass", "TestMethod2", false)]
+        [TestCase("Standard", "TestStandardProject", "StandardClass", "TestMethod", true)]
+        [TestCase("Standard", "TestStandardProject", "StandardClass", "TestMethod2", false)]
+        public async Task TestAnalyze(string frameworkVersion, string namespaceName, string className,
+            string methodName, bool expected)
         {
             var testAnalyzer = new TestAnalyzer();
             await _runner.RunAnalyzersAsync(new Settings
@@ -102,8 +106,7 @@ namespace Tolltech.EnnoblerTest
             }, new IAnalyzer[] {testAnalyzer}).ConfigureAwait(false);
 
             var methods = testAnalyzer.GetMethods(namespaceName, className, methodName);
-            Assert.Equal(methods.Length > 0, expected);
+            Assert.AreEqual(methods.Length > 0, expected);
         }
-
     }
 }

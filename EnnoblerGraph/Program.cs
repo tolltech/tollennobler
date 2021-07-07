@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Tolltech.Common;
 using Tolltech.Ennobler;
@@ -20,10 +19,12 @@ namespace Tolltech.EnnoblerGraph
 {
     public static class Program
     {
+        private static ILog log;
+
         public static async Task Main()
         {
             LogProvider.Configure(GetLog());
-            var log = GetLog();
+            log = GetLog();
 
             var inputMetricsLines = File.ReadAllLines("input.csv");
 
@@ -62,9 +63,8 @@ namespace Tolltech.EnnoblerGraph
                 });
             }
 
-            var codeMetricsByName = codeMetrics.ToLookup(x => (x.Name.NamespaceName, x.Name.ClassName, x.Name.MethodName));
-
-            //var codeMetricsByName = codeMetrics.ToDictionary(x => )
+            var codeMetricsByName =
+                codeMetrics.ToLookup(x => (x.Name.NamespaceName, x.Name.ClassName, x.Name.MethodName));
 
             var runner = new Runner();
 
@@ -73,50 +73,158 @@ namespace Tolltech.EnnoblerGraph
             {
                 RootNamespaceForNinjectConfiguring = "Tolltech",
                 SolutionPath = "C:\\work\\billy\\PG.sln",
-            }, new[] {callStackBuilder});
+            }, new[] {callStackBuilder}).ConfigureAwait(false);
 
-            var nodes = callStackBuilder.GetFullestCallStack(
+            var entryPointMethodName = new FullMethodName
+            {
+                ClassName = "PaymentTransactionService",
+                MethodName = "FiscalizeAsync",
+                NamespaceName = "SKBKontur.Billy.Billing.PaymentsGateway.Layers.ApplicationLayer",
+                ParameterTypes = new[] {"KBAImportBillModel", "BillingSystem", "Guid?", "CashFlowDbo[]"}
+            };
+
+            WriteMetrics(callStackBuilder, codeMetricsByName, "Prefix", entryPointMethodName,
                 new FullMethodName
                 {
-                    ClassName = "PaymentTransactionService",
-                    MethodName = "FiscalizeAsync",
-                    NamespaceName = "SKBKontur.Billy.Billing.PaymentsGateway.Layers.ApplicationLayer",
-                    ParameterTypes = new[] {"KBAImportBillModel", "BillingSystem", "Guid?", "CashFlowDbo[]"}
-                },
+                    ClassName = "FiscalizationClassifier",
+                    MethodName = "Classify",
+                    NamespaceName = "SKBKontur.Billy.Billing.PaymentsGateway.Layers.DomainLayer"
+                });
+
+            WriteMetrics(callStackBuilder, codeMetricsByName, "ShipmentError", entryPointMethodName,
                 new FullMethodName
                 {
-                    ClassName = "PaymentTransactionService",
-                    MethodName = "SendFiscalizationCountByBillMetrics",
+                    ClassName = "FiscalizationContractStatesDetector",
+                    MethodName = "InnerGetShipmentFiscalizationContractStates",
+                    NamespaceName = "SKBKontur.Billy.Billing.PaymentsGateway.Layers.DomainLayer"
+                });
+
+            WriteMetrics(callStackBuilder, codeMetricsByName, "Contract", entryPointMethodName,
+                new FullMethodName
+                {
+                    ClassName = "FiscalizationContractDboConverter",
+                    MethodName = "Convert",
                     NamespaceName = "SKBKontur.Billy.Billing.PaymentsGateway.Layers.ApplicationLayer"
                 });
 
-            var sb = new StringBuilder();
-            foreach (var tree in nodes)
-            foreach (var node in tree.Dfs())
-            {
-                var metricsStr = GetMetricsStr(codeMetricsByName, node.Node, node.Level, log);
-
-                sb.AppendLine(metricsStr);
-            }
-
-
-            log.Info(sb.ToString());
-
-            sb.Clear();
-            foreach (var tree in nodes)
-            {
-                var level = 0;
-                foreach (var node in tree.RightWays())
+            WriteMetrics(callStackBuilder, codeMetricsByName, "DoubleCheque", entryPointMethodName,
+                new FullMethodName
                 {
-                    var metricsStr = GetMetricsStr(codeMetricsByName, node, level++, log);
-                    sb.AppendLine(metricsStr);
-                }
-            }
+                    ClassName = "FiscalizationContractStatesDetector",
+                    MethodName = "InnerGetFiscalizationContractStates",
+                    NamespaceName = "SKBKontur.Billy.Billing.PaymentsGateway.Layers.DomainLayer"
+                });
 
-            log.Info(sb.ToString());
+            WriteMetrics(callStackBuilder, codeMetricsByName, "ShipmentCheque", entryPointMethodName,
+                new FullMethodName
+                {
+                    ClassName = "BillFiscalizationsHistory",
+                    MethodName = "GetFiscalizationsToCreate",
+                    NamespaceName = "SKBKontur.Billy.Billing.PaymentsGateway.Layers.DomainLayer"
+                });
+
+            WriteMetrics(callStackBuilder, codeMetricsByName, "OnlineClassify", entryPointMethodName,
+                new FullMethodName
+                {
+                    ClassName = "Fiscalization",
+                    MethodName = "NeedToBeFiscalizedByPayment",
+                    NamespaceName = "SKBKontur.Billy.Billing.PaymentsGateway.Layers.DomainLayer"
+                });
+
+
+            //var sb = new StringBuilder();
+            //foreach (var tree in nodes)
+            //foreach (var node in tree.Dfs())
+            //{
+            //    var metricsStr = GetMetricsStr(codeMetricsByName, node.Node, node.Level, log);
+
+            //    sb.AppendLine(metricsStr);
+            //}
+
+
+            //log.Info(sb.ToString());
+
+            //sb.Clear();
+            //foreach (var tree in nodes)
+            //{
+            //    var level = 0;
+            //    foreach (var node in tree.RightWays())
+            //    {
+            //        var metricsStr = GetMetricsStr(codeMetricsByName, node, level++, log);
+            //        sb.AppendLine(metricsStr);
+            //    }
+            //}
+
+            //log.Info(sb.ToString());
         }
 
-        private static string GetMetricsStr(ILookup<(string NamespaceName, string ClassName, string MethodName), MethodMetrics> codeMetricsByName, TreeNode<CompiledMethod> node, int level, ILog log)
+        private static void WriteMetrics(CallStackBuilder callStackBuilder,
+            ILookup<(string NamespaceName, string ClassName, string MethodName), MethodMetrics> codeMetricsByName,
+            string name, FullMethodName entryPoint, FullMethodName targetPoint)
+        {
+            var nodes = callStackBuilder.GetFullestCallStack(entryPoint, targetPoint);
+            foreach (var treeNode in nodes)
+            {
+                var maxMetrics = treeNode.Dfs()
+                    .Select(x => GetMethodMetrics(codeMetricsByName, x.Node))
+                    .Where(x => x != null)
+                    .ToArray();
+                var minMetrics = treeNode.RightWays()
+                    .Select(x => GetMethodMetrics(codeMetricsByName, x))
+                    .Where(x => x != null)
+                    .ToArray();
+
+                var aggregatedMaxMetrics = GetAggregatedMetrics(maxMetrics);
+                var aggregatedMinMetrics = GetAggregatedMetrics(minMetrics);
+
+                log.Info($"{name} MAX - {aggregatedMaxMetrics}");
+                log.Info($"{name} MIN - {aggregatedMinMetrics}");
+            }
+        }
+
+        private static (int MaxMaintainabilityIndex, int MinMaintainabilityIndex, double AvgMaintainabilityIndex, int
+            MedMaintainabilityIndex, int MaxCyclomaticComplexity, int MinCyclomaticComplexity, double
+            AvgCyclomaticComplexity,
+            int MedCyclomaticComplexity, int LinesOfExecutableCode, int LinesOfSourceCode, int MaxClassCoupling, int
+            MinClassCoupling, double AvgClassCoupling, int MedClassCoupling, int P95ClassCoupling) GetAggregatedMetrics(
+                MethodMetrics[] metrics)
+        {
+            var aggregatedMaxMetrics = (
+                MaxMaintainabilityIndex: metrics.Max(x => x.MaintainabilityIndex),
+                MinMaintainabilityIndex: metrics.Min(x => x.MaintainabilityIndex),
+                AvgMaintainabilityIndex: metrics.Average(x => x.MaintainabilityIndex),
+                MedMaintainabilityIndex: metrics.Select(x => x.MaintainabilityIndex).ToArray().GetMedian(),
+                MaxCyclomaticComplexity: metrics.Max(x => x.CyclomaticComplexity),
+                MinCyclomaticComplexity: metrics.Min(x => x.CyclomaticComplexity),
+                AvgCyclomaticComplexity: metrics.Average(x => x.CyclomaticComplexity),
+                MedCyclomaticComplexity: metrics.Select(x => x.CyclomaticComplexity).ToArray().GetMedian(),
+                LinesOfExecutableCode: metrics.Sum(x => x.LinesOfExecutableCode),
+                LinesOfSourceCode: metrics.Sum(x => x.LinesOfSourceCode),
+                MaxClassCoupling: metrics.Max(x => x.ClassCoupling),
+                MinClassCoupling: metrics.Min(x => x.ClassCoupling),
+                AvgClassCoupling: metrics.Average(x => x.ClassCoupling),
+                MedClassCoupling: metrics.Select(x => x.ClassCoupling).ToArray().GetMedian(),
+                P95ClassCoupling: metrics.Select(x => x.ClassCoupling).ToArray().GetPercentile(95)
+            );
+            return aggregatedMaxMetrics;
+        }
+
+        private static string GetMetricsStr(
+            ILookup<(string NamespaceName, string ClassName, string MethodName), MethodMetrics> codeMetricsByName,
+            TreeNode<CompiledMethod> node, int level)
+        {
+            var methodMetric = GetMethodMetrics(codeMetricsByName, node);
+
+            var metricsStr = new string('\t', level) + $"{node.Node.ClassName}" +
+                             $".{node.Node.ShortName}" +
+                             $".{string.Join(",", node.Node.ParameterInfos.Select(x => x.Type))}" +
+                             $" - MI {methodMetric?.MaintainabilityIndex};Cyclo {methodMetric?.CyclomaticComplexity};Lines {methodMetric?.LinesOfExecutableCode};Coupling {methodMetric?.ClassCoupling}";
+            return metricsStr;
+        }
+
+        private static MethodMetrics GetMethodMetrics(
+            ILookup<(string NamespaceName, string ClassName, string MethodName), MethodMetrics> codeMetricsByName,
+            TreeNode<CompiledMethod> node)
         {
             var methodMetrics =
                 codeMetricsByName[(node.Node.Namespace, node.Node.ClassName, node.Node.ShortName)].ToArray();
@@ -126,7 +234,8 @@ namespace Tolltech.EnnoblerGraph
             if (suitableMethodMetrics.Length > 1)
             {
                 suitableMethodMetrics = suitableMethodMetrics
-                    .Where(x => SyntaxHelpers.ParametersAreSuitableSimple(sourceParameters, x.Name.ParameterTypes)).ToArray();
+                    .Where(x => SyntaxHelpers.ParametersAreSuitableSimple(sourceParameters, x.Name.ParameterTypes))
+                    .ToArray();
             }
 
             if (suitableMethodMetrics.Length > 1)
@@ -143,12 +252,7 @@ namespace Tolltech.EnnoblerGraph
             }
 
             var methodMetric = suitableMethodMetrics.FirstOrDefault();
-
-            var metricsStr = new string('\t', level) + $"{node.Node.ClassName}" +
-                             $".{node.Node.ShortName}" +
-                             $".{string.Join(",", node.Node.ParameterInfos.Select(x => x.Type))}" +
-                             $" - MI {methodMetric?.MaintainabilityIndex};Cyclo {methodMetric?.CyclomaticComplexity};Lines {methodMetric?.LinesOfExecutableCode};Coupling {methodMetric?.ClassCoupling}";
-            return metricsStr;
+            return methodMetric;
         }
 
         private static string[] GetParametersFromCodeMetricsReport(string methodName)
@@ -161,7 +265,7 @@ namespace Tolltech.EnnoblerGraph
             }
 
             var underBraces = new string(methodName.SkipWhile(c => c != '(').TakeWhile(c => c != ')').ToArray());
-            return underBraces.Trim('(',')').Split(',').Select(x => x.Trim(' ')).ToArray();
+            return underBraces.Trim('(', ')').Split(',').Select(x => x.Trim(' ')).ToArray();
         }
 
         private static ILog GetLog()

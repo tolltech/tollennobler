@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 
 namespace Tolltech.Common
 {
@@ -10,20 +12,36 @@ namespace Tolltech.Common
             return dfs(root, 0);
         }
 
-        public static IEnumerable<TreeNode<T>> RightWays<T>(this TreeNode<T> root)
+        [NotNull]
+        public static T[] GetFastestWay<T>(this TreeNode<T> root, [NotNull] Func<T, bool> target)
         {
-            var current = root;
-
-            while (true)
+            var path = new LinkedList<T>();
+            if (search(root, target, path))
             {
-                yield return current;
-                current = current.Children.Length > 0 ? current.Children.Last() : null;
+                return path.ToArray();
+            }
 
-                if (current == null)
+            return Array.Empty<T>();
+        }
+
+        private static bool search<T>(TreeNode<T> root, [NotNull] Func<T, bool> target, [NotNull] LinkedList<T> path)
+        {
+            path.AddLast(root.Node);
+            if (target(root.Node))
+            {
+                return true;
+            }
+
+            foreach (var child in root.Children)
+            {
+                if (search(child, target, path))
                 {
-                    break;
+                    return true;
                 }
             }
+            path.RemoveLast();
+
+            return false;
         }
 
         private static IEnumerable<(TreeNode<T> Node, int Level)> dfs<T>(TreeNode<T> node, int level)

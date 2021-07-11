@@ -61,12 +61,6 @@ namespace Tolltech.EnnoblerGraph
 
             visitedMethodHashes.Add(currentMethod.Hash);
 
-            if (currentMethod.ClassName == "FiscalizationBuilder" &&
-                currentMethod.ShortName == "BuildFiscalizations")
-            {
-                var c = 0;
-            }
-
             var node = new TreeNode<CompiledMethod>
             {
                 Node = currentMethod

@@ -180,8 +180,8 @@ namespace Tolltech.EnnoblerGraph
                 var aggregatedMaxMetrics = GetAggregatedMetrics(maxMetrics);
                 var aggregatedMinMetrics = GetAggregatedMetrics(minMetrics);
 
-                log.Info($"{name} MAX - {aggregatedMaxMetrics}");
-                log.Info($"{name} MIN - {aggregatedMinMetrics}");
+                log.Warn($"{name} MAX - {aggregatedMaxMetrics}");
+                log.Warn($"{name} MIN - {aggregatedMinMetrics}");
             }
         }
 
@@ -288,7 +288,20 @@ namespace Tolltech.EnnoblerGraph
                             Period = RollingPeriod.Day
                         }
                     }
+                ),
+                new FileLog(
+                    new FileLogSettings
+                    {
+                        FilePath = "logs/logWarn",
+                        EnabledLogLevels = new [] {LogLevel.Warn},
+                        RollingStrategy = new RollingStrategyOptions
+                        {
+                            Type = RollingStrategyType.Hybrid,
+                            Period = RollingPeriod.Day
+                        }
+                    }
                 )
+
             );
         }
     }

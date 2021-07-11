@@ -84,11 +84,17 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
                         {
                             Name = x.Declaration.Variables.First().Identifier.ValueText,
                             Parameters = new ParameterSyntax[0],
-                            MethodBody = (BlockSyntax) null,
+                            MethodBody = (SyntaxNode) null,
                             MemberType = MemberType.Field,
                             ReturnType = x.Declaration.Type,
                             Span = x.Span
                         }).ToArray();
+
+
+                        if (classSymbol.Name == "FiscalizationSet")
+                        {
+                            var c = 0;
+                        }
 
                         var propertyDeclarationSyntaxes = classDeclarationSyntax.DescendantNodes()
                             .OfType<PropertyDeclarationSyntax>().ToArray();
@@ -96,8 +102,9 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
                         {
                             Name = semanticModel.GetDeclaredSymbol(x)?.Name,
                             Parameters = new ParameterSyntax[0],
-                            MethodBody = x.AccessorList?.Accessors.FirstOrDefault(y => y.Keyword.ValueText == "get")
-                                ?.Body,
+                            MethodBody = (SyntaxNode)x.AccessorList?.Accessors.FirstOrDefault(y => y.Keyword.ValueText == "get")?.Body
+                            ?? x.AccessorList?.Accessors.FirstOrDefault(y => y.Keyword.ValueText == "get")?.ExpressionBody
+                            ?? x.ExpressionBody,
                             MemberType = MemberType.Property,
                             ReturnType = x.Type,
                             Span = x.Span
@@ -109,15 +116,28 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
                         {
                             Name = semanticModel.GetDeclaredSymbol(x)?.Name,
                             Parameters = x.ParameterList.Parameters.Select(y => y).ToArray(),
-                            MethodBody = x.Body,
+                            MethodBody = (SyntaxNode)x.Body,
                             MemberType = MemberType.Method,
                             ReturnType = x.ReturnType,
                             Span = x.Span
                         }).ToArray();
 
+
+                        var ctorDeclarationSyntaxes = classDeclarationSyntax.DescendantNodes()
+                            .OfType<ConstructorDeclarationSyntax>().ToArray();
+                        var ctors = ctorDeclarationSyntaxes.Select(x => new
+                        {
+                            Name = classSymbol.Name,
+                            Parameters = x.ParameterList.Parameters.Select(y => y).ToArray(),
+                            MethodBody = (SyntaxNode)x.Body,
+                            MemberType = MemberType.Ctor,
+                            ReturnType = (TypeSyntax)null,
+                            Span = x.Span
+                        }).ToArray();
+
                         var className = classSymbol.Name;
                         var namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
-                        var newMethods = fields.Concat(properties).Concat(methods).Select(x => new CompiledMethod
+                        var newMethods = fields.Concat(properties).Concat(methods).Concat(ctors).Select(x => new CompiledMethod
                         {
                             Namespace = namespaceName,
                             ClassName = className,
@@ -182,7 +202,8 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
         {
             Method,
             Property,
-            Field
+            Field,
+            Ctor
         }
 
         [ItemNotNull]

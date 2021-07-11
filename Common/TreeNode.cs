@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Tolltech.Common
 {
+    [DebuggerDisplay("{" + nameof(Node) + ",nq}")]
     public class TreeNode<TNode>
     {
         public TreeNode()

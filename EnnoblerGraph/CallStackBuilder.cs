@@ -31,7 +31,7 @@ namespace Tolltech.EnnoblerGraph
 
         [NotNull]
         public TreeNode<CompiledMethod>[] GetFullestCallStack(FullMethodName entryPointMethodName,
-            FullMethodName targetMethodName)
+            FullMethodName targetMethodName, out CompiledMethod targetMethod)
         {
             var entryPointMethods = compiledSolution.CompiledProjects.GetMethods(entryPointMethodName);
             var targetMethods = compiledSolution.CompiledProjects.GetMethods(targetMethodName);
@@ -40,11 +40,13 @@ namespace Tolltech.EnnoblerGraph
                 throw new Exception($"More than 1 target method is not supported");
             }
 
+            targetMethod = targetMethods.Single();
+
             var nodes = new List<TreeNode<CompiledMethod>>();
 
             foreach (var entryPointMethod in entryPointMethods)
             {
-                var node = BuildNode(entryPointMethod, targetMethods.Single());
+                var node = BuildNode(entryPointMethod, targetMethod);
 
                 nodes.Add(node);
             }
@@ -52,11 +54,18 @@ namespace Tolltech.EnnoblerGraph
             return nodes.ToArray();
         }
 
-        private TreeNode<CompiledMethod> BuildNode([NotNull] CompiledMethod currentMethod, [NotNull] CompiledMethod targetMethod, HashSet<string> visitedMethodHashes = null)
+        private TreeNode<CompiledMethod> BuildNode([NotNull] CompiledMethod currentMethod,
+            [NotNull] CompiledMethod targetMethod, HashSet<string> visitedMethodHashes = null)
         {
             visitedMethodHashes ??= new HashSet<string>();
 
             visitedMethodHashes.Add(currentMethod.Hash);
+
+            if (currentMethod.ClassName == "FiscalizationBuilder" &&
+                currentMethod.ShortName == "BuildFiscalizations")
+            {
+                var c = 0;
+            }
 
             var node = new TreeNode<CompiledMethod>
             {
@@ -85,9 +94,10 @@ namespace Tolltech.EnnoblerGraph
                     continue;
                 }
 
-                childNodes.Add(BuildNode(foundMethod, targetMethod));
+                childNodes.Add(BuildNode(foundMethod, targetMethod, visitedMethodHashes));
             }
 
+            visitedMethodHashes.Remove(currentMethod.Hash);
             node.Children = childNodes.ToArray();
             return node;
         }
@@ -95,8 +105,9 @@ namespace Tolltech.EnnoblerGraph
         [CanBeNull]
         private CompiledMethod FoundMethodsBySyntaxNode(SyntaxNode syntaxNode, CompiledMethod compiledMethod)
         {
-            var methodSearchParameters = TryGetPrivateMethod(syntaxNode, compiledMethod) 
+            var methodSearchParameters = TryGetPrivateMethod(syntaxNode, compiledMethod)
                                          ?? TryGetProperty(syntaxNode, compiledMethod)
+                                         ?? TryGetCtor(syntaxNode, compiledMethod)
                                          ?? TryGetDefault(syntaxNode, compiledMethod);
 
             if (methodSearchParameters == null)
@@ -136,12 +147,15 @@ namespace Tolltech.EnnoblerGraph
 
             var methodName = methodSearchParameters.MethodName;
             var parameters = methodSearchParameters.Parameters;
-            var filePaths = string.Join(",", classSymbolWithBaseTypes.Select(x => $"{x.ContainingNamespace?.ToDisplayString()}.{x.Name}"));
+            var filePaths = string.Join(",",
+                classSymbolWithBaseTypes.Select(x => $"{x.ContainingNamespace?.ToDisplayString()}.{x.Name}"));
             if (suitableMethodsByName.Count == 0)
             {
-                log.Error($"Find 0 candidates {methodName} with parameters {string.Join(",", parameters.Select(x => x?.ToString()))}");
-                $"Find 0 candidates,{methodName},{filePaths},{string.Join(";", parameters.Select(x => x?.ToString()))}".ToStructuredLogFile();
-               return null;
+                log.Error(
+                    $"Find 0 candidates {methodName} with parameters {string.Join(",", parameters.Select(x => x?.ToString()))}");
+                $"Find 0 candidates,{methodName},{filePaths},{string.Join(";", parameters.Select(x => x?.ToString()))}"
+                    .ToStructuredLogFile();
+                return null;
             }
 
             var suitableMethod = suitableMethodsByName.First();
@@ -150,7 +164,7 @@ namespace Tolltech.EnnoblerGraph
                 var candidates = suitableMethodsByName.Select(x =>
                     {
                         var suitable = x.ParametersAreSuitable(parameters, out var identity);
-                        return new { Suitable = suitable, Identity = identity, Candidate = x };
+                        return new {Suitable = suitable, Identity = identity, Candidate = x};
                     })
                     .Where(x => x.Suitable)
                     .OrderBy(x => x.Identity.HasValue && x.Identity.Value ? 0 : 1)
@@ -159,14 +173,18 @@ namespace Tolltech.EnnoblerGraph
 
                 if (candidates.Length == 0)
                 {
-                    log.Error($"Find 0 methods {methodName} in document {filePaths} with parameters {string.Join(",", parameters.Select(x => x?.ToString() ?? "null"))}");
-                    $"Find 0 methods,{methodName},{filePaths},{string.Join(";", parameters.Select(x => x?.ToString() ?? "null"))}".ToStructuredLogFile();
+                    log.Error(
+                        $"Find 0 methods {methodName} in document {filePaths} with parameters {string.Join(",", parameters.Select(x => x?.ToString() ?? "null"))}");
+                    $"Find 0 methods,{methodName},{filePaths},{string.Join(";", parameters.Select(x => x?.ToString() ?? "null"))}"
+                        .ToStructuredLogFile();
                 }
 
                 if (candidates.Length > 1)
                 {
-                    log.Error($"Find more than 1 method {methodName} in document {filePaths} with parameters {string.Join(",", parameters.Select(x => x?.ToString() ?? "null"))}");
-                    $"Find more than 1 method,{methodName},{filePaths},{string.Join(";", parameters.Select(x => x?.ToString() ?? "null"))}".ToStructuredLogFile();
+                    log.Error(
+                        $"Find more than 1 method {methodName} in document {filePaths} with parameters {string.Join(",", parameters.Select(x => x?.ToString() ?? "null"))}");
+                    $"Find more than 1 method,{methodName},{filePaths},{string.Join(";", parameters.Select(x => x?.ToString() ?? "null"))}"
+                        .ToStructuredLogFile();
                 }
 
                 if (candidates.Length >= 1)
@@ -180,116 +198,104 @@ namespace Tolltech.EnnoblerGraph
 
         private MethodSearchParameters TryGetProperty(SyntaxNode syntaxNode, CompiledMethod compiledMethod)
         {
-            return null;
-            #region property is not interesting
-        //it is true if it's method invocation, not for property
-            //if (syntaxNode.Parent is InvocationExpressionSyntax)
-            //{
-            //    return null;
-            //}
+            //it is true if it's method invocation, not for property
+            if (syntaxNode.Parent is InvocationExpressionSyntax)
+            {
+                return null;
+            }
 
-            //PropertyCallInfo propertyCallInfo;
-            //if (syntaxNode is MemberAccessExpressionSyntax)
-            //{
-            //    var memberAccessExpressiontSyntax = (MemberAccessExpressionSyntax)syntaxNode;
-            //    var propertyName = memberAccessExpressiontSyntax.Name.Identifier.ValueText;
+            PropertyCallInfo propertyCallInfo = null;
+            if (syntaxNode is MemberAccessExpressionSyntax memberAccessExpressionSyntax)
+            {
+                var propertyName = memberAccessExpressionSyntax.Name.Identifier.ValueText;
 
+                propertyCallInfo = new PropertyCallInfo
+                {
+                    PropertyName = propertyName,
+                    EntityExpression = memberAccessExpressionSyntax.Expression,
+                    IsSetAccessor = (memberAccessExpressionSyntax.Parent as AssignmentExpressionSyntax)?.Left ==
+                                    memberAccessExpressionSyntax
+                };
+            }
+            else if (syntaxNode is ConditionalAccessExpressionSyntax conditionalAccessExpressionSyntax)
+            {
+                var propertyName = (conditionalAccessExpressionSyntax.WhenNotNull as MemberBindingExpressionSyntax)
+                    ?.Name.Identifier.ValueText;
 
-            //    propertyCallInfo = new PropertyCallInfo
-            //    {
-            //        PropertyName = propertyName,
-            //        EntityExpression = memberAccessExpressiontSyntax.Expression,
-            //        IsSetAccessor = (syntaxNode.Parent as AssignmentExpressionSyntax)?.Left == memberAccessExpressiontSyntax
-            //    };
-            //}
-            //else if (syntaxNode is ConditionalAccessExpressionSyntax)
-            //{
-            //    var conditionalAccessExpressionSyntax = (ConditionalAccessExpressionSyntax)syntaxNode;
-            //    var propertyName = (conditionalAccessExpressionSyntax.WhenNotNull as MemberBindingExpressionSyntax)
-            //        ?.Name.Identifier.ValueText;
+                propertyCallInfo = new PropertyCallInfo
+                {
+                    PropertyName = propertyName,
+                    EntityExpression = conditionalAccessExpressionSyntax.Expression,
+                    IsSetAccessor = false
+                };
+            }
+            else if (syntaxNode is AssignmentExpressionSyntax assignmentExpressionSyntax)
+            {
+                var propertyName = (assignmentExpressionSyntax.Left as IdentifierNameSyntax)?.Identifier.ValueText;
+                if (propertyName == null)
+                {
+                    return null;
+                }
 
-            //    propertyCallInfo = new PropertyCallInfo
-            //    {
-            //        PropertyName = propertyName,
-            //        EntityExpression = conditionalAccessExpressionSyntax.Expression,
-            //        IsSetAccessor = false
-            //    };
-            //}
-            //else if (syntaxNode is AssignmentExpressionSyntax)
-            //{
-            //    var assignmentExpressionSyntax = (AssignmentExpressionSyntax)syntaxNode;
+                var objectCreationExpressionSyntax =
+                    ((assignmentExpressionSyntax.Parent as InitializerExpressionSyntax)?
+                        .Parent as ObjectCreationExpressionSyntax);
 
-            //    var propertyName = (assignmentExpressionSyntax.Left as IdentifierNameSyntax)?.Identifier.ValueText;
-            //    if (propertyName == null)
-            //    {
-            //        return null;
-            //    }
+                if (objectCreationExpressionSyntax == null)
+                {
+                    return null;
+                }
 
-            //    var objectCreationExpressionSyntax =
-            //    ((assignmentExpressionSyntax.Parent as InitializerExpressionSyntax)?
-            //        .Parent as ObjectCreationExpressionSyntax);
+                propertyCallInfo = new PropertyCallInfo
+                {
+                    PropertyName = propertyName,
+                    EntityExpression = objectCreationExpressionSyntax,
+                    IsSetAccessor = true
+                };
+            }
 
-            //    if (objectCreationExpressionSyntax == null)
-            //    {
-            //        return null;
-            //    }
+            if (propertyCallInfo == null)
+            {
+                return null;
+            }
 
-            //    propertyCallInfo = new PropertyCallInfo
-            //    {
-            //        PropertyName = propertyName,
-            //        EntityExpression = objectCreationExpressionSyntax,
-            //        IsSetAccessor = true
-            //    };
+            var entityExpression = propertyCallInfo.EntityExpression;
 
-            //}
-            //else
-            //{
-            //    return null;
-            //}
+            //for checking if namespace
+            var symbolInfo =
+                compiledMethod.SemanticModel.GetSymbolInfo(entityExpression).Symbol as INamespaceOrTypeSymbol;
+            if (symbolInfo?.IsNamespace ?? false)
+            {
+                return null;
+            }
 
-            //var entityExpression = propertyCallInfo.EntityExpression;
+            var entityType = compiledMethod.SemanticModel.GetTypeInfo(entityExpression).Type;
 
-            ////for checking if namespace
-            //var symbolInfo = extractedMethod.GetTypeSymbolInfo(entityExpression);
-            //if (symbolInfo?.IsNamespace ?? false)
-            //{
-            //    return null;
-            //}
+            if (entityType == null)
+            {
+                log.Error(
+                    $"Cant find entity for property {propertyCallInfo.PropertyName} {propertyCallInfo.EntityExpression} {compiledMethod.ClassName}");
+                return null;
+            }
 
-            //var entityType = extractedMethod.GetExpressionSymbol(entityExpression);
+            if (entityType.ContainingNamespace?.ToString().StartsWith("System") ?? false)
+            {
+                return null;
+            }
 
-            //if (entityType == null)
-            //{
-            //    log.Error($"Cant find entity for property {propertyCallInfo.PropertyName} {propertyCallInfo.EntityExpression} {extractedMethod.ClassName}");
-            //    return null;
-            //}
+            var entityTypes = entityType.TypeKind == TypeKind.Interface || entityType.IsAbstract
+                ? SymbolFinder.FindImplementationsAsync(entityType, compiledSolution.Solution).Result
+                    .Cast<ITypeSymbol>().ToArray()
+                : new[] {entityType};
 
-            //if (!entityType.IsInteresting(rootNamespaceName))
-            //{
-            //    return null;
-            //}
+            return new MethodSearchParameters(propertyCallInfo.PropertyName, entityTypes, Array.Empty<ITypeSymbol>());
+        }
 
-            //var entityTypes = entityType.TypeKind == TypeKind.Interface || entityType.IsAbstract
-            //    ? SymbolFinder.FindImplementationsAsync(entityType, solution).Result.Cast<ITypeSymbol>().ToArray()
-            //    : new[] { entityType };
-
-            //return new MethodSearchInfo
-            //{
-            //    MethodName = propertyCallInfo.PropertyName,
-            //    ClassSymbols = entityTypes,
-            //    IsNetwork = false,
-            //    Parameters = new ITypeSymbol[0],
-            //    Async = false,
-            //    IsSetAccessor = propertyCallInfo.IsSetAccessor
-            //};
-
-            //private class PropertyCallInfo
-            //{
-            //    public string PropertyName { get; set; }
-            //    public ExpressionSyntax EntityExpression { get; set; }
-            //    public bool IsSetAccessor { get; set; }
-            //}
-            #endregion
+        private class PropertyCallInfo
+        {
+            public string PropertyName { get; set; }
+            public ExpressionSyntax EntityExpression { get; set; }
+            public bool IsSetAccessor { get; set; }
         }
 
         private MethodSearchParameters TryGetPrivateMethod(SyntaxNode syntaxNode, CompiledMethod compiledMethod)
@@ -306,7 +312,8 @@ namespace Tolltech.EnnoblerGraph
                 var classDeclarationSyntax = invocationExpressionSyntax.FindParent<ClassDeclarationSyntax>();
                 if (classDeclarationSyntax != null)
                 {
-                    if (compiledMethod.SemanticModel.GetDeclaredSymbol(classDeclarationSyntax) is INamedTypeSymbol classSymbol)
+                    if (compiledMethod.SemanticModel.GetDeclaredSymbol(classDeclarationSyntax) is INamedTypeSymbol
+                        classSymbol)
                     {
                         return new MethodSearchParameters(identifierNameSyntax.Identifier.ValueText,
                             new[] {classSymbol}, invocationExpressionSyntax.ArgumentList.Arguments
@@ -318,6 +325,28 @@ namespace Tolltech.EnnoblerGraph
 
             return null;
         }
+
+        private MethodSearchParameters TryGetCtor(SyntaxNode syntaxNode, CompiledMethod compiledMethod)
+        {
+            var objectCreationExpressionSyntax = syntaxNode as ObjectCreationExpressionSyntax;
+            if (objectCreationExpressionSyntax == null)
+            {
+                return null;
+            }
+
+            var objectType = compiledMethod.SemanticModel.GetTypeInfo(objectCreationExpressionSyntax).Type;
+
+            if (objectType == null)
+            {
+                return null;
+            }
+
+            return new MethodSearchParameters(objectType.Name,
+                new[] {objectType}, objectCreationExpressionSyntax.ArgumentList?.Arguments
+                    .Select(x => compiledMethod.SemanticModel.GetTypeInfo(x.Expression).Type)
+                    .ToArray() ?? Array.Empty<ITypeSymbol>());
+        }
+
 
         private MethodSearchParameters TryGetDefault(SyntaxNode syntaxNode, CompiledMethod compiledMethod)
         {

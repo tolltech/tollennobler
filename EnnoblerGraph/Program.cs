@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Tolltech.Common;
 using Tolltech.Ennobler;
@@ -132,16 +133,6 @@ namespace Tolltech.EnnoblerGraph
                 });
 
 
-            //var sb = new StringBuilder();
-            //foreach (var tree in nodes)
-            //foreach (var node in tree.Dfs())
-            //{
-            //    var metricsStr = GetMetricsStr(codeMetricsByName, node.Node, node.Level, log);
-
-            //    sb.AppendLine(metricsStr);
-            //}
-
-
             //log.Info(sb.ToString());
 
             //sb.Clear();
@@ -162,14 +153,26 @@ namespace Tolltech.EnnoblerGraph
             ILookup<(string NamespaceName, string ClassName, string MethodName), MethodMetrics> codeMetricsByName,
             string name, FullMethodName entryPoint, FullMethodName targetPoint)
         {
-            var nodes = callStackBuilder.GetFullestCallStack(entryPoint, targetPoint);
+            var nodes = callStackBuilder.GetFullestCallStack(entryPoint, targetPoint, out var targetMethod);
+
+            var sb = new StringBuilder();
+            foreach (var tree in nodes)
+            foreach (var node in tree.Dfs())
+            {
+                var metricsStr = GetMetricsStr(codeMetricsByName, node.Node, node.Level);
+
+                sb.AppendLine(metricsStr);
+            }
+            log.Info(sb.ToString());
+
             foreach (var treeNode in nodes)
             {
                 var maxMetrics = treeNode.Dfs()
-                    .Select(x => GetMethodMetrics(codeMetricsByName, x.Node))
+                    .Select(x => GetMethodMetrics(codeMetricsByName, x.Node.Node))
                     .Where(x => x != null)
                     .ToArray();
-                var minMetrics = treeNode.RightWays()
+                var minMetrics = treeNode.GetFastestWay(x =>
+                        x.Name == targetMethod.Name && x.ParametersAreSuitable(targetMethod, out _))
                     .Select(x => GetMethodMetrics(codeMetricsByName, x))
                     .Where(x => x != null)
                     .ToArray();
@@ -213,7 +216,7 @@ namespace Tolltech.EnnoblerGraph
             ILookup<(string NamespaceName, string ClassName, string MethodName), MethodMetrics> codeMetricsByName,
             TreeNode<CompiledMethod> node, int level)
         {
-            var methodMetric = GetMethodMetrics(codeMetricsByName, node);
+            var methodMetric = GetMethodMetrics(codeMetricsByName, node.Node);
 
             var metricsStr = new string('\t', level) + $"{node.Node.ClassName}" +
                              $".{node.Node.ShortName}" +
@@ -224,13 +227,13 @@ namespace Tolltech.EnnoblerGraph
 
         private static MethodMetrics GetMethodMetrics(
             ILookup<(string NamespaceName, string ClassName, string MethodName), MethodMetrics> codeMetricsByName,
-            TreeNode<CompiledMethod> node)
+            CompiledMethod node)
         {
             var methodMetrics =
-                codeMetricsByName[(node.Node.Namespace, node.Node.ClassName, node.Node.ShortName)].ToArray();
+                codeMetricsByName[(node.Namespace, node.ClassName, node.ShortName)].ToArray();
             var suitableMethodMetrics = methodMetrics;
 
-            var sourceParameters = node.Node.ParameterInfos.Select(x => x?.Type).ToArray();
+            var sourceParameters = node.ParameterInfos.Select(x => x?.Type).ToArray();
             if (suitableMethodMetrics.Length > 1)
             {
                 suitableMethodMetrics = suitableMethodMetrics
@@ -241,14 +244,14 @@ namespace Tolltech.EnnoblerGraph
             if (suitableMethodMetrics.Length > 1)
             {
                 log.Error(
-                    $"Find several metrics for {node.Node.Name} with parameters {string.Join(",", sourceParameters)}");
-                $"Find several metrics,{node.Node.Name},,{string.Join(",", sourceParameters)}".ToStructuredLogFile();
+                    $"Find several metrics for {node.Name} with parameters {string.Join(",", sourceParameters)}");
+                $"Find several metrics,{node.Name},,{string.Join(",", sourceParameters)}".ToStructuredLogFile();
             }
 
             if (suitableMethodMetrics.Length == 0)
             {
-                log.Error($"Find 0 metrics for {node.Node.Name} with parameters {string.Join(",", sourceParameters)}");
-                $"Find 0 metrics,{node.Node.Name},,{string.Join(",", sourceParameters)}".ToStructuredLogFile();
+                log.Error($"Find 0 metrics for {node.Name} with parameters {string.Join(",", sourceParameters)}");
+                $"Find 0 metrics,{node.Name},,{string.Join(",", sourceParameters)}".ToStructuredLogFile();
             }
 
             var methodMetric = suitableMethodMetrics.FirstOrDefault();

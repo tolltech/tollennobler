@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Diagnostics;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Newtonsoft.Json;
@@ -6,6 +7,7 @@ using Tolltech.Ennobler.Models;
 
 namespace Tolltech.Ennobler.SolutionGraph.Models
 {
+    [DebuggerDisplay("{" + nameof(DebugName) + ",nq}")]
     public class CompiledMethod
     {
         public string DebugName => $"{ClassName}.{ShortName}.{string.Join(",", ParameterInfos.Select(x => x.Name))}";
@@ -42,7 +44,7 @@ namespace Tolltech.Ennobler.SolutionGraph.Models
         [JsonIgnore]
         public ParameterSyntax[] Parameters { get; set; }
         [JsonIgnore]
-        public BlockSyntax MethodBody { get; set; }
+        public SyntaxNode MethodBody { get; set; }
         [JsonIgnore]
         public SemanticModel SemanticModel { get; set; }
         [JsonIgnore]

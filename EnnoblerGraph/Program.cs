@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Tolltech.Common;
 using Tolltech.Ennobler;
@@ -28,7 +25,7 @@ namespace Tolltech.EnnoblerGraph
             log = GetLog();
 
             var parser = new MetricDataParser();
-            var codeMetrics = parser.ParseCsv("input.csv");
+            var codeMetrics = parser.ParseXml("codeMetrics.xml");
 
             var codeMetricsByName = codeMetrics.ToLookup(x => (x.Name.NamespaceName, x.Name.ClassName, x.Name.MethodName));
 

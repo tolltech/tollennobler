@@ -10,6 +10,7 @@ using Tolltech.Ennobler.Models;
 using Tolltech.Ennobler.SolutionGraph.Helpers;
 using Tolltech.Ennobler.SolutionGraph.Models;
 using Tolltech.EnnoblerGraph.Metrics;
+using Tolltech.EnnoblerGraph.Parsers;
 using Vostok.Logging.Abstractions;
 using Vostok.Logging.Console;
 using Vostok.Logging.File;
@@ -26,45 +27,10 @@ namespace Tolltech.EnnoblerGraph
             LogProvider.Configure(GetLog());
             log = GetLog();
 
-            var inputMetricsLines = File.ReadAllLines("input.csv");
+            var parser = new MetricDataParser();
+            var codeMetrics = parser.ParseCsv("input.csv");
 
-            var headerLine = inputMetricsLines[0];
-            if (headerLine !=
-                "Scope\tProject\tNamespace\tType\tMember\tMaintainability Index\tCyclomatic Complexity\tDepth of Inheritance\tClass Coupling\tLines of Source code\tLines of Executable code")
-            {
-                throw new Exception("Inconsistent metrics file");
-            }
-
-            var codeMetrics = new List<MethodMetrics>(inputMetricsLines.Length - 1);
-
-            foreach (var line in inputMetricsLines.Skip(1))
-            {
-                var splits = line.Split('\t');
-
-                if (splits[0] != "Member")
-                {
-                    continue;
-                }
-
-                codeMetrics.Add(new MethodMetrics
-                {
-                    Name = new FullMethodName
-                    {
-                        ClassName = splits[3],
-                        MethodName = new string(splits[4].Trim('"').TakeWhile(char.IsLetterOrDigit).ToArray()),
-                        NamespaceName = splits[2],
-                        ParameterTypes = GetParametersFromCodeMetricsReport(splits[4])
-                    },
-                    MaintainabilityIndex = splits[5].ToIntDefault(),
-                    CyclomaticComplexity = splits[6].ToIntDefault(),
-                    ClassCoupling = splits[8].ToIntDefault(),
-                    LinesOfSourceCode = splits[9].ToIntDefault(),
-                    LinesOfExecutableCode = splits[10].ToIntDefault()
-                });
-            }
-
-            var codeMetricsByName =
-                codeMetrics.ToLookup(x => (x.Name.NamespaceName, x.Name.ClassName, x.Name.MethodName));
+            var codeMetricsByName = codeMetrics.ToLookup(x => (x.Name.NamespaceName, x.Name.ClassName, x.Name.MethodName));
 
             var runner = new Runner();
 
@@ -255,19 +221,6 @@ namespace Tolltech.EnnoblerGraph
 
             var methodMetric = suitableMethodMetrics.FirstOrDefault();
             return methodMetric;
-        }
-
-        private static string[] GetParametersFromCodeMetricsReport(string methodName)
-        {
-            //"BuildFiscalizationsHistory(IFiscalization[], FiscalizationBill, FiscalizationCheque[], FiscalizationBillMoney, Dictionary<string, FiscalizationCheque[]>, IFiscalization[]) : IBillFiscalizationHistory"
-
-            if (methodName.Contains("FiscalizeAsync"))
-            {
-                var c = 2;
-            }
-
-            var underBraces = new string(methodName.SkipWhile(c => c != '(').TakeWhile(c => c != ')').ToArray());
-            return underBraces.Trim('(', ')').Split(',').Select(x => x.Trim(' ')).ToArray();
         }
 
         private static ILog GetLog()

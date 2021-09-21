@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Tolltech.Common;
 using Tolltech.Ennobler;
@@ -155,15 +154,15 @@ namespace Tolltech.EnnoblerGraph
         {
             var nodes = callStackBuilder.GetFullestCallStack(entryPoint, targetPoint, out var targetMethod);
 
-            var sb = new StringBuilder();
-            foreach (var tree in nodes)
-            foreach (var node in tree.Dfs())
-            {
-                var metricsStr = GetMetricsStr(codeMetricsByName, node.Node, node.Level);
+            //var sb = new StringBuilder();
+            //foreach (var tree in nodes)
+            //foreach (var node in tree.Dfs())
+            //{
+            //    var metricsStr = GetMetricsStr(codeMetricsByName, node.Node, node.Level);
 
-                sb.AppendLine(metricsStr);
-            }
-            log.Info(sb.ToString());
+            //    sb.AppendLine(metricsStr);
+            //}
+            //log.Info(sb.ToString());
 
             foreach (var treeNode in nodes)
             {
